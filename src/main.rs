@@ -1,10 +1,10 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_editor_pls::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(EditorPlugin)
         .add_startup_system(setup)
         .run();
 }
@@ -28,7 +28,7 @@ fn setup(
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
         material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 0.0, 20.0),
+        transform: Transform::from_xyz(0.0, 0.0, 20.5),
         ..default()
     });
 
