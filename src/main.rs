@@ -1,11 +1,15 @@
 use bevy::prelude::*;
 use bevy_editor_pls::prelude::*;
+use bevy_rapier3d::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(EditorPlugin)
         .add_startup_system(setup)
+        .add_system(gravity)
         .run();
 }
 
@@ -15,22 +19,33 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // planet
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Icosphere {
-            radius: 20.0,
-            subdivisions: 20,
-        })),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..default()
-    });
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Icosphere {
+                radius: 20.0,
+                subdivisions: 20,
+            })),
+            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            ..default()
+        })
+        .insert(Collider::ball(20.0));
 
     // cube
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 0.0, 20.5),
-        ..default()
-    });
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+            transform: Transform::from_xyz(0.0, 0.0, 22.5),
+            ..default()
+        })
+        .insert(Collider::cuboid(0.5, 0.5, 0.5))
+        .insert(RigidBody::Dynamic)
+        .insert(GravityScale(0.0))
+        .insert(Restitution::coefficient(0.7))
+        .insert(ExternalForce {
+            force: Vec3::new(0.0, 0.0, 0.0),
+            torque: Vec3::new(0.0, 0.0, 0.0),
+        });
 
     // light
     const HALF_SIZE: f32 = 20.0;
@@ -62,4 +77,11 @@ fn setup(
         transform: Transform::from_xyz(0.0, 0.0, 60.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
+}
+
+// Custom gravity which acts towards the center of the planet
+fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
+    for (transform, mut force) in query.iter_mut() {
+        force.force += transform.translation.normalize() * -9.81;
+    }
 }
