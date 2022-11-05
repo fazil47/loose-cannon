@@ -28,20 +28,33 @@ fn setup(
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
             ..default()
         })
-        .insert(Collider::ball(20.0));
+        .insert(Collider::ball(20.0))
+        .insert(Friction {
+            coefficient: 2.0,
+            combine_rule: CoefficientCombineRule::Max,
+        })
+        .insert(Restitution::coefficient(0.0));
 
-    // cube
+    // player
     commands
         .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            mesh: meshes.add(Mesh::from(shape::Icosphere {
+                radius: 1.0,
+                subdivisions: 10,
+            })),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
             transform: Transform::from_xyz(0.0, 0.0, 22.5),
             ..default()
         })
-        .insert(Collider::cuboid(0.5, 0.5, 0.5))
+        .insert(Collider::ball(1.0))
         .insert(RigidBody::Dynamic)
+        .insert(ColliderMassProperties::Density(2.0))
         .insert(GravityScale(0.0))
-        .insert(Restitution::coefficient(0.7))
+        .insert(Friction {
+            coefficient: 2.0,
+            combine_rule: CoefficientCombineRule::Max,
+        })
+        .insert(Restitution::coefficient(0.0))
         .insert(ExternalForce {
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
@@ -92,6 +105,6 @@ fn setup(
 // Custom gravity which acts towards the center of the planet (which is at the origin)
 fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     for (transform, mut force) in query.iter_mut() {
-        force.force = transform.translation.normalize_or_zero() * -9.81;
+        force.force = transform.translation.normalize_or_zero() * -9.81 * 10.0;
     }
 }
