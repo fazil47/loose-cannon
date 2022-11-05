@@ -45,9 +45,13 @@ fn setup(
         .insert(ExternalForce {
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
+        })
+        .insert(ExternalImpulse {
+            impulse: Vec3::new(0.0, 0.0, 0.0),
+            torque_impulse: Vec3::new(0.0, 0.0, 0.0),
         });
 
-    // light
+    // directional light
     const HALF_SIZE: f32 = 20.0;
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {
@@ -72,6 +76,12 @@ fn setup(
         ..default()
     });
 
+    // ambient light
+    commands.insert_resource(AmbientLight {
+        color: Color::rgb(1.0, 1.0, 0.8),
+        brightness: 0.1,
+    });
+
     // camera
     commands.spawn_bundle(Camera3dBundle {
         transform: Transform::from_xyz(0.0, 0.0, 60.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -79,9 +89,9 @@ fn setup(
     });
 }
 
-// Custom gravity which acts towards the center of the planet
+// Custom gravity which acts towards the center of the planet (which is at the origin)
 fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     for (transform, mut force) in query.iter_mut() {
-        force.force += transform.translation.normalize() * -9.81;
+        force.force = transform.translation.normalize_or_zero() * -9.81;
     }
 }
