@@ -119,16 +119,16 @@ fn player_input(
     mut player_query: Query<(&Transform, &mut ExternalImpulse)>,
     camera_query: Query<&Transform, With<Camera3d>>,
 ) {
-    let window = windows.get_primary().unwrap();
-    let camera_transform = camera_query.iter().next().unwrap();
+    let window: &Window = windows.get_primary().unwrap();
+    let camera_transform: &Transform = camera_query.iter().next().unwrap();
 
     // If cursor is inside the window
-    if let Some(_position) = window.cursor_position() {
+    if let Some(cursor_pos) = window.cursor_position() {
         if buttons.just_pressed(MouseButton::Left) {
             for (transform, mut impulse) in player_query.iter_mut() {
                 println!(
                     "Cursor position in screen space {}, in world space {}, player translation {}, rotation {}",
-                    _position, window_to_world(_position, window, camera_transform), transform.translation, transform.rotation
+                    cursor_pos, window_to_world(cursor_pos, window, camera_transform), transform.translation, transform.rotation
                 );
                 impulse.impulse = Vec3::new(128.0, 0.0, 0.0);
             }
