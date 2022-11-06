@@ -120,7 +120,7 @@ fn player_input(
     camera_query: Query<&Transform, With<Camera3d>>,
 ) {
     let window = windows.get_primary().unwrap();
-    let camera = camera_query.iter().next().unwrap();
+    let camera_transform = camera_query.iter().next().unwrap();
 
     // If cursor is inside the window
     if let Some(_position) = window.cursor_position() {
@@ -128,7 +128,7 @@ fn player_input(
             for (transform, mut impulse) in player_query.iter_mut() {
                 println!(
                     "Cursor position in screen space {}, in world space {}, player translation {}, rotation {}",
-                    _position, window_to_world(_position, window, camera), transform.translation, transform.rotation
+                    _position, window_to_world(_position, window, camera_transform), transform.translation, transform.rotation
                 );
                 impulse.impulse = Vec3::new(128.0, 0.0, 0.0);
             }
@@ -145,14 +145,14 @@ fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
 
 // From https://stackoverflow.com/a/65633668/7658270, licensed under CC BY-SA 4.0
 // Transform position from screen space to world space
-fn window_to_world(position: Vec2, window: &Window, camera: &Transform) -> Vec3 {
+fn window_to_world(position: Vec2, window: &Window, camera_transform: &Transform) -> Vec3 {
     // Center in screen space
-    let norm = Vec3::new(
+    let centered_pos = Vec3::new(
         position.x - window.width() / 2.0,
         position.y - window.height() / 2.0,
         0.0,
     );
 
-    // Apply camera transform
-    camera.mul_vec3(norm)
+    // Return after applying camera transform
+    camera_transform.mul_vec3(centered_pos)
 }
