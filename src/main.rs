@@ -164,7 +164,8 @@ fn player_input(
 
                     lines.line(ray_origin, hit_point, 20.0);
 
-                    impulse.impulse = hit_to_player_dir.normalize() * 100.0;
+                    // TODO: direction doesn't seem to be right
+                    impulse.impulse = tangent * 100.0;
                 } else {
                     lines.line_colored(
                         ray_origin,
