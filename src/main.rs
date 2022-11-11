@@ -3,8 +3,12 @@ use bevy_editor_pls::prelude::*;
 use bevy_prototype_debug_lines::*;
 use bevy_rapier3d::prelude::*;
 
+// TODO: Add more consts
 const PLANET_SIZE: f32 = 20.0;
 const PLAYER_SIZE: f32 = 2.0;
+
+#[derive(Component)]
+struct Player {}
 
 fn main() {
     App::new()
@@ -16,6 +20,7 @@ fn main() {
         .add_startup_system(setup)
         .add_system(gravity)
         .add_system(player_input)
+        .add_system(move_camera)
         .run();
 }
 
@@ -55,6 +60,7 @@ fn setup(
             transform: Transform::from_xyz(0.0, 0.0, 21.5),
             ..default()
         })
+        .insert(Player {})
         .insert(Collider::ball(1.0))
         .insert(RigidBody::Dynamic)
         .insert(Damping {
@@ -124,59 +130,72 @@ fn player_input(
     rapier_context: Res<RapierContext>,
     mut lines: ResMut<DebugLines>,
     mut player_query: Query<(&Transform, &mut ExternalImpulse)>,
-    camera_query: Query<(&Transform, &Camera)>,
+    mut camera_query: Query<(&mut Transform, &Camera), Without<ExternalImpulse>>,
 ) {
     let window: &Window = windows.get_primary().unwrap();
-    let (camera_transform, camera): (&Transform, &Camera) = camera_query.iter().next().unwrap();
 
     // If cursor is inside the window
     if let Some(cursor_pos) = window.cursor_position() {
         if buttons.just_pressed(MouseButton::Left) {
-            for (transform, mut impulse) in player_query.iter_mut() {
-                let (cursor_world_pos, cursor_world_dir) =
-                    camera_to_cursor_in_world(window, cursor_pos, camera_transform, &camera);
+            let (camera_transform, camera) = camera_query.iter_mut().next().unwrap();
+            let (transform, mut impulse) = player_query.single_mut();
 
-                // Make a raycast from cursor world position parallet to camera direction
-                let ray_origin = cursor_world_pos;
-                let ray_dir = cursor_world_dir;
-                let max_toi = 600.0;
-                let solid = true;
-                let filter = QueryFilter::new();
+            let (cursor_world_pos, cursor_world_dir) =
+                camera_to_cursor_in_world(window, cursor_pos, camera_transform.as_ref(), &camera);
 
-                if let Some((_entity, toi)) =
-                    rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
-                {
-                    // Get the point on the planet where the raycast hit
-                    let hit_point = ray_origin + (ray_dir * toi);
+            // Make a raycast from cursor world position parallet to camera direction
+            let ray_origin = cursor_world_pos;
+            let ray_dir = cursor_world_dir;
+            let max_toi = 600.0;
+            let solid = true;
+            let filter = QueryFilter::new();
 
-                    // Get the unit vector in the direction of the vector from the hit point to the player
-                    let hit_to_player_dir = (transform.translation - hit_point).normalize();
+            if let Some((_entity, toi)) =
+                rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
+            {
+                // Get the point on the planet where the raycast hit
+                let hit_point = ray_origin + (ray_dir * toi);
 
-                    // let angle between hit_to_player_dir and normal on the planet at the player's position is theta
-                    let angle = transform
-                        .translation
-                        .normalize()
-                        .dot(hit_to_player_dir)
-                        .acos();
+                // Get the unit vector in the direction of the vector from the hit point to the player
+                let hit_to_player_dir = (transform.translation - hit_point).normalize();
 
-                    // then sin(theta) gives the tangent along the planet's surface in the direction of the vector from the hit point to the player
-                    let tangent = (hit_to_player_dir * angle.sin()).normalize();
+                // let angle between hit_to_player_dir and normal on the planet at the player's position is theta
+                let angle = transform
+                    .translation
+                    .normalize()
+                    .dot(hit_to_player_dir)
+                    .acos();
 
-                    lines.line(ray_origin, hit_point, 20.0);
+                // then sin(theta) gives the tangent along the planet's surface in the direction of the vector from the hit point to the player
+                let tangent = (hit_to_player_dir * angle.sin()).normalize();
 
-                    // TODO: direction doesn't seem to be right
-                    impulse.impulse = tangent * 100.0;
-                } else {
-                    lines.line_colored(
-                        ray_origin,
-                        ray_origin + (ray_dir * max_toi),
-                        20.0,
-                        Color::RED,
-                    );
-                }
+                lines.line(ray_origin, hit_point, 20.0);
+
+                // TODO: direction doesn't seem to be right
+                impulse.impulse = tangent * 100.0;
+            } else {
+                lines.line_colored(
+                    ray_origin,
+                    ray_origin + (ray_dir * max_toi),
+                    20.0,
+                    Color::RED,
+                );
             }
         }
     }
+}
+
+fn move_camera(
+    mut camera_transforms: Query<(&mut Transform, &Camera3d)>,
+    player_query: Query<(&Transform, &Player), Without<Camera3d>>,
+) {
+    let (mut camera_transform, _camera) = camera_transforms.iter_mut().next().unwrap();
+
+    let (player_transform, _player) = player_query.single();
+    let player_translation_scaled = player_transform.translation.normalize() * 60.0;
+
+    *camera_transform = Transform::from_translation(player_translation_scaled)
+        .looking_at(Vec3::ZERO, camera_transform.up());
 }
 
 // Custom gravity which acts towards the center of the planet (which is at the origin)
