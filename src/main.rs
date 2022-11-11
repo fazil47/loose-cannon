@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 use bevy_editor_pls::prelude::*;
+use bevy_prototype_debug_lines::*;
 use bevy_rapier3d::prelude::*;
+
+const PLANET_SIZE: f32 = 20.0;
+const PLAYER_SIZE: f32 = 2.0;
 
 fn main() {
     App::new()
@@ -8,6 +12,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(EditorPlugin)
+        .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
         .add_system(gravity)
         .add_system(player_input)
@@ -23,7 +28,7 @@ fn setup(
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: 20.0,
+                radius: PLANET_SIZE,
                 subdivisions: 20,
             })),
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
@@ -43,7 +48,7 @@ fn setup(
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: 1.0,
+                radius: PLAYER_SIZE / 2.0,
                 subdivisions: 10,
             })),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
@@ -116,21 +121,58 @@ fn setup(
 fn player_input(
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
+    rapier_context: Res<RapierContext>,
+    mut lines: ResMut<DebugLines>,
     mut player_query: Query<(&Transform, &mut ExternalImpulse)>,
-    camera_query: Query<&Transform, With<Camera3d>>,
+    camera_query: Query<(&Transform, &Camera)>,
 ) {
     let window: &Window = windows.get_primary().unwrap();
-    let camera_transform: &Transform = camera_query.iter().next().unwrap();
+    let (camera_transform, camera): (&Transform, &Camera) = camera_query.iter().next().unwrap();
 
     // If cursor is inside the window
     if let Some(cursor_pos) = window.cursor_position() {
         if buttons.just_pressed(MouseButton::Left) {
             for (transform, mut impulse) in player_query.iter_mut() {
-                println!(
-                    "Cursor position in screen space {}, in world space {}, player translation {}, rotation {}",
-                    cursor_pos, window_to_world(cursor_pos, window, camera_transform), transform.translation, transform.rotation
-                );
-                impulse.impulse = Vec3::new(128.0, 0.0, 0.0);
+                let (cursor_world_pos, cursor_world_dir) =
+                    camera_to_cursor_in_world(window, cursor_pos, camera_transform, &camera);
+
+                // Make a raycast from cursor world position parallet to camera direction
+                let ray_origin = cursor_world_pos;
+                let ray_dir = cursor_world_dir;
+                let max_toi = 600.0;
+                let solid = true;
+                let filter = QueryFilter::new();
+
+                if let Some((_entity, toi)) =
+                    rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
+                {
+                    // Get the point on the planet where the raycast hit
+                    let hit_point = ray_origin + (ray_dir * toi);
+
+                    // Get the unit vector in the direction of the vector from the hit point to the player
+                    let hit_to_player_dir = (transform.translation - hit_point).normalize();
+
+                    // let angle between hit_to_player_dir and normal on the planet at the player's position is theta
+                    let angle = transform
+                        .translation
+                        .normalize()
+                        .dot(hit_to_player_dir)
+                        .acos();
+
+                    // then sin(theta) gives the tangent along the planet's surface in the direction of the vector from the hit point to the player
+                    let tangent = (hit_to_player_dir * angle.sin()).normalize();
+
+                    lines.line(ray_origin, hit_point, 20.0);
+
+                    impulse.impulse = hit_to_player_dir.normalize() * 100.0;
+                } else {
+                    lines.line_colored(
+                        ray_origin,
+                        ray_origin + (ray_dir * max_toi),
+                        20.0,
+                        Color::RED,
+                    );
+                }
             }
         }
     }
@@ -143,16 +185,25 @@ fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     }
 }
 
-// From https://stackoverflow.com/a/65633668/7658270, licensed under CC BY-SA 4.0
-// Transform position from screen space to world space
-fn window_to_world(position: Vec2, window: &Window, camera_transform: &Transform) -> Vec3 {
-    // Center in screen space
-    let centered_pos = Vec3::new(
-        position.x - window.width() / 2.0,
-        position.y - window.height() / 2.0,
-        0.0,
-    );
+// TODO: Remove this when bevy 0.9 is released
+// Cast a ray from the camera to the cursor in world space
+// Returns origin of the ray and direction of the ray in world space
+pub fn camera_to_cursor_in_world(
+    primary_window: &Window,
+    cursor_pos: Vec2,
+    camera_transform: &Transform,
+    camera: &Camera,
+) -> (Vec3, Vec3) {
+    let ndc = (cursor_pos / Vec2::new(primary_window.width(), primary_window.height())
+        - Vec2::new(0.5, 0.5))
+        * Vec2::new(2.0, 2.0);
+    let point_1 = ndc.extend(1.);
+    let point_2 = ndc.extend(0.5);
 
-    // Return after applying camera transform
-    camera_transform.mul_vec3(centered_pos)
+    let point_1 =
+        camera_transform.mul_vec3(camera.projection_matrix().inverse().project_point3(point_1));
+    let point_2 =
+        camera_transform.mul_vec3(camera.projection_matrix().inverse().project_point3(point_2));
+
+    (point_1, point_2 - point_1)
 }

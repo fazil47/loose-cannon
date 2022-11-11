@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.8.1" }
 bevy_editor_pls = "0.1.1"
+bevy_prototype_debug_lines = { version = "0.8.1", features = ["3d"] }
 bevy_rapier3d = "0.18.0"
 
 # Enable a small amount of optimization in debug mode
