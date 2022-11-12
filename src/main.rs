@@ -3,9 +3,11 @@ use bevy_editor_pls::prelude::*;
 use bevy_prototype_debug_lines::*;
 use bevy_rapier3d::prelude::*;
 
-// TODO: Add more consts
 const PLANET_SIZE: f32 = 20.0;
 const PLAYER_SIZE: f32 = 2.0;
+const CAMERA_DISTANCE: f32 = 60.0;
+const GRAVITATIONAL_CONSTANT: f32 = 5.0;
+const PLAYER_IMPULSE_MAGNITUDE: f32 = 100.0;
 
 #[derive(Component)]
 struct Player {}
@@ -20,6 +22,7 @@ fn main() {
         .add_startup_system(setup)
         .add_system(gravity)
         .add_system(player_input)
+        .add_system(restrict_player_altitude)
         .add_system(move_camera)
         .run();
 }
@@ -119,7 +122,7 @@ fn setup(
 
     // camera
     commands.spawn_bundle(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 60.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
@@ -130,18 +133,18 @@ fn player_input(
     rapier_context: Res<RapierContext>,
     mut lines: ResMut<DebugLines>,
     mut player_query: Query<(&Transform, &mut ExternalImpulse)>,
-    mut camera_query: Query<(&mut Transform, &Camera), Without<ExternalImpulse>>,
+    camera_query: Query<(&Transform, &Camera), Without<ExternalImpulse>>,
 ) {
     let window: &Window = windows.get_primary().unwrap();
 
     // If cursor is inside the window
     if let Some(cursor_pos) = window.cursor_position() {
         if buttons.just_pressed(MouseButton::Left) {
-            let (camera_transform, camera) = camera_query.iter_mut().next().unwrap();
+            let (camera_transform, camera) = camera_query.iter().next().unwrap();
             let (transform, mut impulse) = player_query.single_mut();
 
             let (cursor_world_pos, cursor_world_dir) =
-                camera_to_cursor_in_world(window, cursor_pos, camera_transform.as_ref(), &camera);
+                camera_to_cursor_in_world(window, cursor_pos, camera_transform, &camera);
 
             // Make a raycast from cursor world position parallet to camera direction
             let ray_origin = cursor_world_pos;
@@ -156,8 +159,11 @@ fn player_input(
                 // Get the point on the planet where the raycast hit
                 let hit_point = ray_origin + (ray_dir * toi);
 
+                // Scaled such that hit point is at the same distance from the planet as the player
+                let hit_point_scaled = hit_point.normalize() * (PLANET_SIZE + PLAYER_SIZE / 2.0);
+
                 // Get the unit vector in the direction of the vector from the hit point to the player
-                let hit_to_player_dir = (transform.translation - hit_point).normalize();
+                let hit_to_player_dir = (transform.translation - hit_point_scaled).normalize();
 
                 // let angle between hit_to_player_dir and normal on the planet at the player's position is theta
                 let angle = transform
@@ -169,10 +175,15 @@ fn player_input(
                 // then sin(theta) gives the tangent along the planet's surface in the direction of the vector from the hit point to the player
                 let tangent = (hit_to_player_dir * angle.sin()).normalize();
 
-                lines.line(ray_origin, hit_point, 20.0);
+                lines.line(ray_origin, hit_point_scaled, 20.0);
+                lines.line_colored(
+                    transform.translation,
+                    transform.translation + tangent,
+                    20.0,
+                    Color::GREEN,
+                );
 
-                // TODO: direction doesn't seem to be right
-                impulse.impulse = tangent * 100.0;
+                impulse.impulse = tangent * PLAYER_IMPULSE_MAGNITUDE;
             } else {
                 lines.line_colored(
                     ray_origin,
@@ -185,14 +196,25 @@ fn player_input(
     }
 }
 
+// Restrict the player to the surface of the planet
+fn restrict_player_altitude(mut player_query: Query<&mut Transform, With<Player>>) {
+    let mut transform = player_query.single_mut();
+
+    let rest_altitude = PLANET_SIZE + PLAYER_SIZE / 2.0;
+    if transform.translation.length() > rest_altitude {
+        transform.translation = transform.translation.normalize() * rest_altitude;
+    }
+}
+
+// Move camera to follow the player
 fn move_camera(
     mut camera_transforms: Query<(&mut Transform, &Camera3d)>,
-    player_query: Query<(&Transform, &Player), Without<Camera3d>>,
+    player_query: Query<&Transform, (With<Player>, Without<Camera3d>)>,
 ) {
     let (mut camera_transform, _camera) = camera_transforms.iter_mut().next().unwrap();
 
-    let (player_transform, _player) = player_query.single();
-    let player_translation_scaled = player_transform.translation.normalize() * 60.0;
+    let player_transform = player_query.single();
+    let player_translation_scaled = player_transform.translation.normalize() * CAMERA_DISTANCE;
 
     *camera_transform = Transform::from_translation(player_translation_scaled)
         .looking_at(Vec3::ZERO, camera_transform.up());
@@ -201,12 +223,13 @@ fn move_camera(
 // Custom gravity which acts towards the center of the planet (which is at the origin)
 fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     for (transform, mut force) in query.iter_mut() {
-        force.force = transform.translation.normalize_or_zero() * -9.81 * 100.0;
+        let grav_force_magnitude = transform.translation.length().powi(2) * GRAVITATIONAL_CONSTANT;
+        force.force = grav_force_magnitude * -transform.translation.normalize();
     }
 }
 
 // TODO: Remove this when bevy 0.9 is released
-// Cast a ray from the camera to the cursor in world space
+// Returns a ray from the camera to the cursor's position in world space
 // Returns origin of the ray and direction of the ray in world space
 pub fn camera_to_cursor_in_world(
     primary_window: &Window,
