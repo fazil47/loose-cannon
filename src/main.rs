@@ -197,12 +197,16 @@ fn player_input(
 }
 
 // Restrict the player to the surface of the planet
-fn restrict_player_altitude(mut player_query: Query<&mut Transform, With<Player>>) {
-    let mut transform = player_query.single_mut();
+fn restrict_player_altitude(
+    mut player_query: Query<(&Transform, &mut ExternalImpulse), With<Player>>,
+) {
+    let (transform, mut impulse) = player_query.single_mut();
 
     let rest_altitude = PLANET_SIZE + PLAYER_SIZE / 2.0;
-    if transform.translation.length() > rest_altitude {
-        transform.translation = transform.translation.normalize() * rest_altitude;
+    let delta = transform.translation.length() - rest_altitude;
+
+    if delta > 0.0 {
+        impulse.impulse += -transform.translation.normalize() * delta * PLAYER_IMPULSE_MAGNITUDE;
     }
 }
 
