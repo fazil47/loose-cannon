@@ -6,8 +6,8 @@ use bevy_rapier3d::prelude::*;
 const PLANET_SIZE: f32 = 20.0;
 const PLAYER_SIZE: f32 = 2.0;
 const CAMERA_DISTANCE: f32 = 60.0;
-const GRAVITATIONAL_CONSTANT: f32 = 5.0;
-const PLAYER_IMPULSE_MAGNITUDE: f32 = 100.0;
+const GRAVITY_MAGNITUDE: f32 = 3.0;
+const PLAYER_IMPULSE_MAGNITUDE: f32 = 200.0;
 
 #[derive(Component)]
 struct Player {}
@@ -22,7 +22,6 @@ fn main() {
         .add_startup_system(setup)
         .add_system(gravity)
         .add_system(player_input)
-        .add_system(restrict_player_altitude)
         .add_system(move_camera)
         .run();
 }
@@ -37,7 +36,7 @@ fn setup(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
                 radius: PLANET_SIZE,
-                subdivisions: 20,
+                subdivisions: 32,
             })),
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
             ..default()
@@ -57,7 +56,7 @@ fn setup(
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
                 radius: PLAYER_SIZE / 2.0,
-                subdivisions: 10,
+                subdivisions: 16,
             })),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
             transform: Transform::from_xyz(0.0, 0.0, 21.5),
@@ -196,20 +195,6 @@ fn player_input(
     }
 }
 
-// Restrict the player to the surface of the planet
-fn restrict_player_altitude(
-    mut player_query: Query<(&Transform, &mut ExternalImpulse), With<Player>>,
-) {
-    let (transform, mut impulse) = player_query.single_mut();
-
-    let rest_altitude = PLANET_SIZE + PLAYER_SIZE / 2.0;
-    let delta = transform.translation.length() - rest_altitude;
-
-    if delta > 0.0 {
-        impulse.impulse += -transform.translation.normalize() * delta * PLAYER_IMPULSE_MAGNITUDE;
-    }
-}
-
 // Move camera to follow the player
 fn move_camera(
     mut camera_transforms: Query<(&mut Transform, &Camera3d)>,
@@ -220,14 +205,24 @@ fn move_camera(
     let player_transform = player_query.single();
     let player_translation_scaled = player_transform.translation.normalize() * CAMERA_DISTANCE;
 
-    *camera_transform = Transform::from_translation(player_translation_scaled)
-        .looking_at(Vec3::ZERO, camera_transform.up());
+    if camera_transform
+        .translation
+        .distance(player_translation_scaled)
+        > 0.1
+    {
+        let new_camera_translation = camera_transform
+            .translation
+            .lerp(player_translation_scaled, 0.4);
+
+        *camera_transform = Transform::from_translation(new_camera_translation)
+            .looking_at(Vec3::ZERO, camera_transform.up());
+    }
 }
 
 // Custom gravity which acts towards the center of the planet (which is at the origin)
 fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     for (transform, mut force) in query.iter_mut() {
-        let grav_force_magnitude = transform.translation.length().powi(2) * GRAVITATIONAL_CONSTANT;
+        let grav_force_magnitude = transform.translation.length().powi(2) * GRAVITY_MAGNITUDE;
         force.force = grav_force_magnitude * -transform.translation.normalize();
     }
 }
