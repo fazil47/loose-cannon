@@ -4,7 +4,7 @@ use bevy_prototype_debug_lines::*;
 use bevy_rapier3d::prelude::*;
 
 const PLANET_SIZE: f32 = 20.0;
-const PLAYER_SIZE: f32 = 2.0;
+const PLAYER_SIZE: f32 = 1.0;
 const CAMERA_DISTANCE: f32 = 60.0;
 const GRAVITY_MAGNITUDE: f32 = 3.0;
 const PLAYER_IMPULSE_MAGNITUDE: f32 = 200.0;
@@ -23,7 +23,6 @@ fn main() {
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
         .add_system(gravity)
-        .add_system(update_player_transform)
         .add_system(player_input)
         .add_system(move_camera)
         .run();
@@ -57,19 +56,24 @@ fn setup(
     // player
     commands
         .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: PLAYER_SIZE })),
+            mesh: meshes.add(Mesh::from(shape::Cube {
+                size: 2.0 * PLAYER_SIZE,
+            })),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.0, 21.5),
+            transform: Transform::from_xyz(0.0, 0.0, PLANET_SIZE + PLAYER_SIZE),
             ..default()
         })
         .insert(Player {});
 
     // player collider
     commands
-        .spawn_bundle(TransformBundle::from(Transform::from_xyz(0.0, 0.0, 21.5)))
-        .insert(Collider::ball(1.0))
+        .spawn_bundle(TransformBundle::from(Transform::from_xyz(
+            0.0,
+            0.0,
+            PLANET_SIZE + PLAYER_SIZE,
+        )))
         .insert(PlayerCollider {})
-        .insert(Collider::ball(1.0))
+        .insert(Collider::ball(PLAYER_SIZE))
         .insert(RigidBody::Dynamic)
         .insert(Damping {
             linear_damping: 0.1,
@@ -132,22 +136,6 @@ fn setup(
     });
 }
 
-fn update_player_transform(
-    mut player_query: Query<&mut Transform, (With<Player>, Without<PlayerCollider>)>,
-    player_collider_query: Query<&Transform, (With<PlayerCollider>, Without<Player>)>,
-    camera_query: Query<&Transform, (With<Camera3d>, Without<Player>)>,
-) {
-    let mut player_transform = player_query.single_mut();
-    let player_collider_transform = player_collider_query.single();
-    let camera_transform = camera_query.iter().next().unwrap();
-
-    // Player translation is the same as the player collider translation
-    player_transform.translation = player_collider_transform.translation;
-
-    // Rotate player transform such that it's up vector is in the same direction as player's translation vector
-    player_transform.set_down(Vec3::ZERO, camera_transform.up());
-}
-
 // Handle player input
 fn player_input(
     buttons: Res<Input<MouseButton>>,
@@ -165,6 +153,12 @@ fn player_input(
     let (camera_transform, camera) = camera_query.iter().next().unwrap();
     let (player_c_transform, mut player_c_impulse) = player_collider_query.single_mut();
     let mut player_transform = player_query.single_mut();
+
+    // Player translation should be the same as the player collider translation
+    player_transform.translation = player_c_transform.translation;
+
+    // Rotate player transform such that it's up vector is in the same direction as player's translation vector
+    player_transform.set_down(Vec3::ZERO, camera_transform.up());
 
     // If cursor is inside the window
     if let Some(cursor_pos) = window.cursor_position() {
@@ -185,35 +179,31 @@ fn player_input(
             // Get the point on the planet where the raycast hit
             let hit_point = ray_origin + (ray_dir * toi);
 
-            // Scaled such that hit point is at the same distance from the planet as the player
-            let hit_point_scaled = hit_point.normalize() * (PLANET_SIZE + PLAYER_SIZE / 2.0);
-
             // Get the unit vector in the direction of the vector from the hit point to the player
-            let hit_to_player_dir = (player_c_transform.translation - hit_point_scaled).normalize();
+            let hit_to_player = (hit_point - player_c_transform.translation).normalize();
 
-            // let angle between hit_to_player_dir and normal on the planet at the player's position be theta
-            let angle = player_c_transform
-                .translation
-                .normalize()
-                .dot(hit_to_player_dir)
-                .acos();
+            // Cross hit_to_player and player collider's normalized translation vector to get the tangent perpendicular to the desired direction
+            let tangent =
+                (hit_to_player.cross(player_c_transform.translation.normalize())).normalize();
 
-            // then sin(theta) gives the tangent along the planet's surface in the direction of the vector from the hit point to the player
-            let tangent = (hit_to_player_dir * angle.sin()).normalize();
+            // Cross again to get the desired direction
+            let tangent = tangent.cross(player_c_transform.translation.normalize());
 
-            // Rotate player mesh such that it's +y axis is aligned with the tangent
-            let player_mesh_angle = tangent.angle_between(player_transform.forward());
-            player_transform.rotate_local_y(player_mesh_angle);
+            lines.line_colored(
+                player_c_transform.translation,
+                player_c_transform.translation + tangent,
+                1.0,
+                Color::GREEN,
+            );
+
+            let target = player_transform.translation + tangent;
+
+            // player_transform.rotate_local_y(player_mesh_angle);
+            player_transform.look_at(target, camera_transform.back());
 
             // If the left mouse button is pressed, apply an impulse in the direction of the tangent
             if buttons.just_pressed(MouseButton::Left) {
-                lines.line(ray_origin, hit_point_scaled, 20.0);
-                lines.line_colored(
-                    player_c_transform.translation,
-                    player_c_transform.translation + tangent,
-                    20.0,
-                    Color::GREEN,
-                );
+                lines.line(ray_origin, hit_point, 20.0);
 
                 player_c_impulse.impulse = tangent * PLAYER_IMPULSE_MAGNITUDE;
             }
