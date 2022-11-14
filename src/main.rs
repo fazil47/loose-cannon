@@ -99,17 +99,16 @@ fn setup(
         });
 
     // directional light
-    const HALF_SIZE: f32 = 20.0;
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {
             // Configure the projection to better fit the scene
             shadow_projection: OrthographicProjection {
-                left: -HALF_SIZE,
-                right: HALF_SIZE,
-                bottom: -HALF_SIZE,
-                top: HALF_SIZE,
-                near: -10.0 * HALF_SIZE,
-                far: 10.0 * HALF_SIZE,
+                left: -PLANET_SIZE,
+                right: PLANET_SIZE,
+                bottom: -PLANET_SIZE,
+                top: PLANET_SIZE,
+                near: -10.0 * PLANET_SIZE,
+                far: 10.0 * PLANET_SIZE,
                 ..default()
             },
             shadows_enabled: true,
