@@ -32,6 +32,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     // planet
     commands
@@ -53,14 +54,10 @@ fn setup(
             combine_rule: CoefficientCombineRule::Max,
         });
 
-    // player
+    // player mesh
     commands
-        .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube {
-                size: 2.0 * PLAYER_SIZE,
-            })),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.0, PLANET_SIZE + PLAYER_SIZE),
+        .spawn_bundle(SceneBundle {
+            scene: asset_server.load("models/cannon.glb#Scene0"),
             ..default()
         })
         .insert(Player {});
