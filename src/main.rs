@@ -15,6 +15,9 @@ struct PlayerMesh {}
 #[derive(Component)]
 struct PlayerCollider {}
 
+#[derive(Component)]
+struct CannonBall {}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -142,6 +145,9 @@ fn setup(
 
 // Handle player input
 fn player_input(
+    commands: Commands,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<StandardMaterial>>,
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
     rapier_context: Res<RapierContext>,
@@ -156,13 +162,13 @@ fn player_input(
     let window: &Window = windows.get_primary().unwrap();
     let (camera_transform, camera) = camera_query.iter().next().unwrap();
     let (player_c_transform, mut player_c_impulse) = player_collider_query.single_mut();
-    let mut player_transform = player_mesh_query.single_mut();
+    let mut player_mesh_transform = player_mesh_query.single_mut();
 
     // Player translation should be the same as the player collider translation
-    player_transform.translation = player_c_transform.translation.normalize() * PLANET_SIZE;
+    player_mesh_transform.translation = player_c_transform.translation.normalize() * PLANET_SIZE;
 
     // Rotate player transform such that it's up vector is in the same direction as player's translation vector
-    player_transform.set_down(Vec3::ZERO, camera_transform.up());
+    player_mesh_transform.set_down(Vec3::ZERO, camera_transform.up());
 
     // If cursor is inside the window
     if let Some(cursor_pos) = window.cursor_position() {
@@ -202,10 +208,10 @@ fn player_input(
                 );
             }
 
-            let target = player_transform.translation + tangent;
+            let target = player_mesh_transform.translation + tangent;
 
             // player_transform.rotate_local_y(player_mesh_angle);
-            player_transform.look_at(target, camera_transform.back());
+            player_mesh_transform.look_at(target, camera_transform.back());
 
             // If the left mouse button is pressed, apply an impulse in the direction of the tangent
             if buttons.just_pressed(MouseButton::Left) {
@@ -214,6 +220,15 @@ fn player_input(
                 }
 
                 player_c_impulse.impulse = tangent * PLAYER_IMPULSE_MAGNITUDE;
+
+                // shoot cannon ball
+                shoot_cannon_ball(
+                    commands,
+                    meshes,
+                    materials,
+                    player_mesh_transform.translation - tangent,
+                    -tangent,
+                )
             }
         }
     }
@@ -251,10 +266,55 @@ fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     }
 }
 
+// Shoot cannon ball helper function
+fn shoot_cannon_ball(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    position: Vec3,
+    direction: Vec3,
+) {
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Icosphere {
+                radius: PLAYER_SIZE / 2.0,
+                subdivisions: 16,
+            })),
+            material: materials.add(Color::rgb(0.3, 0.3, 0.3).into()),
+            transform: Transform::from_translation(position),
+            ..default()
+        })
+        .insert(CannonBall {})
+        .insert(Collider::ball(PLAYER_SIZE))
+        .insert(RigidBody::Dynamic)
+        .insert(Damping {
+            linear_damping: 0.1,
+            angular_damping: 0.2,
+        })
+        .insert(ColliderMassProperties::Density(1.0))
+        .insert(GravityScale(0.0))
+        .insert(Friction {
+            coefficient: 2.0,
+            combine_rule: CoefficientCombineRule::Max,
+        })
+        .insert(Restitution {
+            coefficient: 0.0,
+            combine_rule: CoefficientCombineRule::Max,
+        })
+        .insert(ExternalForce {
+            force: Vec3::new(0.0, 0.0, 0.0),
+            torque: Vec3::new(0.0, 0.0, 0.0),
+        })
+        .insert(ExternalImpulse {
+            impulse: direction * PLAYER_IMPULSE_MAGNITUDE,
+            torque_impulse: Vec3::new(0.0, 0.0, 0.0),
+        });
+}
+
 // TODO: Remove this when bevy 0.9 is released
 // Returns a ray from the camera to the cursor's position in world space
 // Returns origin of the ray and direction of the ray in world space
-pub fn camera_to_cursor_in_world(
+fn camera_to_cursor_in_world(
     primary_window: &Window,
     cursor_pos: Vec2,
     camera_transform: &Transform,
