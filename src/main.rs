@@ -8,9 +8,10 @@ const PLAYER_SIZE: f32 = 1.0;
 const CAMERA_DISTANCE: f32 = 60.0;
 const GRAVITY_MAGNITUDE: f32 = 3.0;
 const PLAYER_IMPULSE_MAGNITUDE: f32 = 200.0;
+const SHOW_DEBUG_LINES: bool = false;
 
 #[derive(Component)]
-struct Player {}
+struct PlayerMesh {}
 #[derive(Component)]
 struct PlayerCollider {}
 
@@ -18,7 +19,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
+        // .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(EditorPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
@@ -44,6 +45,7 @@ fn setup(
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
             ..default()
         })
+        .insert(Name::new("Planet"))
         .insert(Collider::ball(20.0))
         .insert(Friction {
             coefficient: 2.0,
@@ -58,9 +60,11 @@ fn setup(
     commands
         .spawn_bundle(SceneBundle {
             scene: asset_server.load("models/cannon.glb#Scene0"),
+            transform: Transform::from_scale(Vec3::new(0.25, 0.25, 0.25)),
             ..default()
         })
-        .insert(Player {});
+        .insert(Name::new("PlayerMesh"))
+        .insert(PlayerMesh {});
 
     // player collider
     commands
@@ -69,6 +73,7 @@ fn setup(
             0.0,
             PLANET_SIZE + PLAYER_SIZE,
         )))
+        .insert(Name::new("PlayerCollider"))
         .insert(PlayerCollider {})
         .insert(Collider::ball(PLAYER_SIZE))
         .insert(RigidBody::Dynamic)
@@ -95,40 +100,43 @@ fn setup(
             torque_impulse: Vec3::new(0.0, 0.0, 0.0),
         });
 
-    // directional light
-    commands.spawn_bundle(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            // Configure the projection to better fit the scene
-            shadow_projection: OrthographicProjection {
-                left: -PLANET_SIZE,
-                right: PLANET_SIZE,
-                bottom: -PLANET_SIZE,
-                top: PLANET_SIZE,
-                near: -10.0 * PLANET_SIZE,
-                far: 10.0 * PLANET_SIZE,
+    // directional light - sun
+    commands
+        .spawn_bundle(DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                // Configure the projection to better fit the scene
+                shadow_projection: OrthographicProjection {
+                    left: -PLANET_SIZE,
+                    right: PLANET_SIZE,
+                    bottom: -PLANET_SIZE,
+                    top: PLANET_SIZE,
+                    near: -10.0 * PLANET_SIZE,
+                    far: 10.0 * PLANET_SIZE,
+                    ..default()
+                },
+                shadows_enabled: true,
                 ..default()
             },
-            shadows_enabled: true,
+            transform: Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                rotation: Quat::from_scaled_axis(Vec3::new(-0.5, 0.5, 0.0)),
+                ..default()
+            },
             ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_scaled_axis(Vec3::new(-0.5, 0.5, 0.0)),
-            ..default()
-        },
+        })
+        .insert(Name::new("Sun"));
+
+    // camera
+    // Querying doesn't work if I name the camera entity
+    commands.spawn_bundle(Camera3dBundle {
+        transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 
     // ambient light
     commands.insert_resource(AmbientLight {
         color: Color::rgb(1.0, 1.0, 0.8),
-        brightness: 0.1,
-    });
-
-    // camera
-    commands.spawn_bundle(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
+        brightness: 0.5,
     });
 }
 
@@ -140,18 +148,18 @@ fn player_input(
     mut lines: ResMut<DebugLines>,
     mut player_collider_query: Query<
         (&Transform, &mut ExternalImpulse),
-        (With<PlayerCollider>, Without<Player>),
+        (With<PlayerCollider>, Without<PlayerMesh>),
     >,
-    mut player_query: Query<&mut Transform, (With<Player>, Without<PlayerCollider>)>,
-    camera_query: Query<(&Transform, &Camera), (Without<ExternalImpulse>, Without<Player>)>,
+    mut player_mesh_query: Query<&mut Transform, (With<PlayerMesh>, Without<PlayerCollider>)>,
+    camera_query: Query<(&Transform, &Camera), (Without<ExternalImpulse>, Without<PlayerMesh>)>,
 ) {
     let window: &Window = windows.get_primary().unwrap();
     let (camera_transform, camera) = camera_query.iter().next().unwrap();
     let (player_c_transform, mut player_c_impulse) = player_collider_query.single_mut();
-    let mut player_transform = player_query.single_mut();
+    let mut player_transform = player_mesh_query.single_mut();
 
     // Player translation should be the same as the player collider translation
-    player_transform.translation = player_c_transform.translation;
+    player_transform.translation = player_c_transform.translation.normalize() * PLANET_SIZE;
 
     // Rotate player transform such that it's up vector is in the same direction as player's translation vector
     player_transform.set_down(Vec3::ZERO, camera_transform.up());
@@ -185,12 +193,14 @@ fn player_input(
             // Cross again to get the desired direction
             let tangent = tangent.cross(player_c_transform.translation.normalize());
 
-            lines.line_colored(
-                player_c_transform.translation,
-                player_c_transform.translation + tangent,
-                1.0,
-                Color::GREEN,
-            );
+            if SHOW_DEBUG_LINES {
+                lines.line_colored(
+                    player_c_transform.translation,
+                    player_c_transform.translation + tangent,
+                    1.0,
+                    Color::GREEN,
+                );
+            }
 
             let target = player_transform.translation + tangent;
 
@@ -199,7 +209,9 @@ fn player_input(
 
             // If the left mouse button is pressed, apply an impulse in the direction of the tangent
             if buttons.just_pressed(MouseButton::Left) {
-                lines.line(ray_origin, hit_point, 20.0);
+                if SHOW_DEBUG_LINES {
+                    lines.line(ray_origin, hit_point, 20.0);
+                }
 
                 player_c_impulse.impulse = tangent * PLAYER_IMPULSE_MAGNITUDE;
             }
@@ -209,10 +221,10 @@ fn player_input(
 
 // Move camera to follow the player
 fn move_camera(
-    mut camera_transforms: Query<(&mut Transform, &Camera3d)>,
+    mut camera_transforms: Query<&mut Transform, With<Camera3d>>,
     player_query: Query<&Transform, (With<PlayerCollider>, Without<Camera3d>)>,
 ) {
-    let (mut camera_transform, _camera) = camera_transforms.iter_mut().next().unwrap();
+    let mut camera_transform = camera_transforms.iter_mut().next().unwrap();
 
     let player_transform = player_query.single();
     let player_translation_scaled = player_transform.translation.normalize() * CAMERA_DISTANCE;
