@@ -312,7 +312,6 @@ fn shoot_cannon_ball(
         });
 }
 
-// TODO: Check if the rotation is correct
 trait TransformExt {
     /// Rotates this [`Transform`] so that its local negative `Y` direction is toward
     /// `target` and its local negative `Z` direction is toward `forward`.
