@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_editor_pls::prelude::*;
+use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_prototype_debug_lines::*;
 use bevy_rapier3d::prelude::*;
 
@@ -23,7 +23,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         // .add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(EditorPlugin)
+        .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
         .add_system(gravity)
@@ -40,7 +40,7 @@ fn setup(
 ) {
     // planet
     commands
-        .spawn_bundle(PbrBundle {
+        .spawn(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
                 radius: PLANET_SIZE,
                 subdivisions: 32,
@@ -61,7 +61,7 @@ fn setup(
 
     // player mesh
     commands
-        .spawn_bundle(SceneBundle {
+        .spawn(SceneBundle {
             scene: asset_server.load("models/cannon.glb#Scene0"),
             transform: Transform::from_scale(Vec3::new(0.25, 0.25, 0.25)),
             ..default()
@@ -71,7 +71,7 @@ fn setup(
 
     // player collider
     commands
-        .spawn_bundle(TransformBundle::from(Transform::from_xyz(
+        .spawn(TransformBundle::from(Transform::from_xyz(
             0.0,
             0.0,
             PLANET_SIZE + PLAYER_SIZE,
@@ -105,7 +105,7 @@ fn setup(
 
     // directional light - sun
     commands
-        .spawn_bundle(DirectionalLightBundle {
+        .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
                 // Configure the projection to better fit the scene
                 shadow_projection: OrthographicProjection {
@@ -131,7 +131,7 @@ fn setup(
 
     // camera
     // Querying doesn't work if I name the camera entity
-    commands.spawn_bundle(Camera3dBundle {
+    commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
@@ -157,7 +157,10 @@ fn player_input(
         (With<PlayerCollider>, Without<PlayerMesh>),
     >,
     mut player_mesh_query: Query<&mut Transform, (With<PlayerMesh>, Without<PlayerCollider>)>,
-    camera_query: Query<(&Transform, &Camera), (Without<ExternalImpulse>, Without<PlayerMesh>)>,
+    camera_query: Query<
+        (&GlobalTransform, &Camera),
+        (Without<ExternalImpulse>, Without<PlayerMesh>),
+    >,
 ) {
     let window: &Window = windows.get_primary().unwrap();
     let (camera_transform, camera) = camera_query.iter().next().unwrap();
@@ -172,22 +175,20 @@ fn player_input(
 
     // If cursor is inside the window
     if let Some(cursor_pos) = window.cursor_position() {
-        let (cursor_world_pos, cursor_world_dir) =
-            camera_to_cursor_in_world(window, cursor_pos, camera_transform, &camera);
-
         // Make a raycast from cursor world position parallet to camera direction
-        let ray_origin = cursor_world_pos;
-        let ray_dir = cursor_world_dir;
+        let ray = camera
+            .viewport_to_world(camera_transform, cursor_pos)
+            .unwrap();
         let max_toi = 600.0;
         let solid = true;
         let filter = QueryFilter::new();
 
         // If the raycast hits the planet collider
         if let Some((_entity, toi)) =
-            rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
+            rapier_context.cast_ray(ray.origin, ray.direction, max_toi, solid, filter)
         {
             // Get the point on the planet where the raycast hit
-            let hit_point = ray_origin + (ray_dir * toi);
+            let hit_point = ray.origin + (ray.direction * toi);
 
             // Get the unit vector in the direction of the vector from the hit point to the player
             let hit_to_player = (hit_point - player_c_transform.translation).normalize();
@@ -216,7 +217,7 @@ fn player_input(
             // If the left mouse button is pressed, apply an impulse in the direction of the tangent
             if buttons.just_pressed(MouseButton::Left) {
                 if SHOW_DEBUG_LINES {
-                    lines.line(ray_origin, hit_point, 20.0);
+                    lines.line(ray.origin, hit_point, 20.0);
                 }
 
                 player_c_impulse.impulse = tangent * PLAYER_IMPULSE_MAGNITUDE;
@@ -275,7 +276,7 @@ fn shoot_cannon_ball(
     direction: Vec3,
 ) {
     commands
-        .spawn_bundle(PbrBundle {
+        .spawn(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
                 radius: PLAYER_SIZE / 2.0,
                 subdivisions: 16,
@@ -309,29 +310,6 @@ fn shoot_cannon_ball(
             impulse: direction * PLAYER_IMPULSE_MAGNITUDE,
             torque_impulse: Vec3::new(0.0, 0.0, 0.0),
         });
-}
-
-// TODO: Remove this when bevy 0.9 is released
-// Returns a ray from the camera to the cursor's position in world space
-// Returns origin of the ray and direction of the ray in world space
-fn camera_to_cursor_in_world(
-    primary_window: &Window,
-    cursor_pos: Vec2,
-    camera_transform: &Transform,
-    camera: &Camera,
-) -> (Vec3, Vec3) {
-    let ndc = (cursor_pos / Vec2::new(primary_window.width(), primary_window.height())
-        - Vec2::new(0.5, 0.5))
-        * Vec2::new(2.0, 2.0);
-    let point_1 = ndc.extend(1.);
-    let point_2 = ndc.extend(0.5);
-
-    let point_1 =
-        camera_transform.mul_vec3(camera.projection_matrix().inverse().project_point3(point_1));
-    let point_2 =
-        camera_transform.mul_vec3(camera.projection_matrix().inverse().project_point3(point_2));
-
-    (point_1, point_2 - point_1)
 }
 
 // TODO: Check if the rotation is correct
