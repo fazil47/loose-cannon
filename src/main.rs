@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_prototype_debug_lines::*;
@@ -122,12 +124,38 @@ fn setup(
             },
             transform: Transform {
                 translation: Vec3::new(0.0, 2.0, 0.0),
-                rotation: Quat::from_scaled_axis(Vec3::new(-0.5, 0.5, 0.0)),
+                rotation: Quat::from_rotation_y(PI / 3.0),
                 ..default()
             },
             ..default()
         })
         .insert(Name::new("Sun"));
+
+    // directional light - moon
+    commands
+        .spawn(DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                // Configure the projection to better fit the scene
+                shadow_projection: OrthographicProjection {
+                    left: -PLANET_SIZE,
+                    right: PLANET_SIZE,
+                    bottom: -PLANET_SIZE,
+                    top: PLANET_SIZE,
+                    near: -10.0 * PLANET_SIZE,
+                    far: 10.0 * PLANET_SIZE,
+                    ..default()
+                },
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                rotation: Quat::from_rotation_y(4.0 * PI / 3.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Name::new("Moon"));
 
     // camera
     // Querying doesn't work if I name the camera entity
@@ -139,7 +167,7 @@ fn setup(
     // ambient light
     commands.insert_resource(AmbientLight {
         color: Color::rgb(1.0, 1.0, 0.8),
-        brightness: 0.5,
+        brightness: 0.2,
     });
 }
 
