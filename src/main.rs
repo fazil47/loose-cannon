@@ -5,7 +5,7 @@ use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_prototype_debug_lines::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::cubemap::{construct_skybox, Cubemap, CubemapMaterial};
+use loose_cannon::cubemap::{construct_skybox, Cubemap, CubemapMaterial};
 
 const CUBEMAP: &(&str, CompressedImageFormats) = &(
     "textures/skybox/corona_skybox.png",
@@ -17,8 +17,6 @@ const CAMERA_DISTANCE: f32 = 60.0;
 const GRAVITY_MAGNITUDE: f32 = 3.0;
 const PLAYER_IMPULSE_MAGNITUDE: f32 = 200.0;
 const SHOW_DEBUG_LINES: bool = false;
-
-mod cubemap;
 
 #[derive(Component)]
 struct PlayerMesh {}
