@@ -30,11 +30,7 @@ struct CannonBall {}
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(AssetPlugin {
-            // Tell the asset server to watch for asset changes on disk:
-            watch_for_changes: true,
-            ..default()
-        }))
+        .add_plugins(DefaultPlugins)
         .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         // .add_plugin(RapierDebugRenderPlugin::default())
