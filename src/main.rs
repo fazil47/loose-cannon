@@ -1,16 +1,24 @@
 use std::f32::consts::PI;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, render::texture::CompressedImageFormats};
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_prototype_debug_lines::*;
 use bevy_rapier3d::prelude::*;
 
+use crate::cubemap::{construct_skybox, Cubemap, CubemapMaterial};
+
+const CUBEMAP: &(&str, CompressedImageFormats) = &(
+    "textures/skybox/corona_skybox.png",
+    CompressedImageFormats::NONE,
+);
 const PLANET_SIZE: f32 = 20.0;
 const PLAYER_SIZE: f32 = 1.0;
 const CAMERA_DISTANCE: f32 = 60.0;
 const GRAVITY_MAGNITUDE: f32 = 3.0;
 const PLAYER_IMPULSE_MAGNITUDE: f32 = 200.0;
 const SHOW_DEBUG_LINES: bool = false;
+
+mod cubemap;
 
 #[derive(Component)]
 struct PlayerMesh {}
@@ -22,7 +30,12 @@ struct CannonBall {}
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(AssetPlugin {
+            // Tell the asset server to watch for asset changes on disk:
+            watch_for_changes: true,
+            ..default()
+        }))
+        .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         // .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(WorldInspectorPlugin::new())
@@ -31,6 +44,7 @@ fn main() {
         .add_system(gravity)
         .add_system(player_input)
         .add_system(move_camera)
+        .add_system(construct_skybox)
         .run();
 }
 
@@ -184,7 +198,14 @@ fn setup(
     // ambient light
     commands.insert_resource(AmbientLight {
         color: Color::rgb(1.0, 1.0, 0.8),
-        brightness: 0.2,
+        brightness: 0.4,
+    });
+
+    // skybox
+    let skybox_handle = asset_server.load(CUBEMAP.0);
+    commands.insert_resource(Cubemap {
+        image_handle: skybox_handle,
+        is_loaded: false,
     });
 }
 
