@@ -47,7 +47,12 @@ fn setup(
                 radius: PLANET_SIZE,
                 subdivisions: 32,
             })),
-            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            material: materials.add(StandardMaterial {
+                base_color: Color::rgb(0.3, 0.5, 0.3).into(),
+                perceptual_roughness: 0.8,
+                metallic: 0.4,
+                ..default()
+            }),
             ..default()
         })
         .insert(Name::new("Planet"))
@@ -109,7 +114,13 @@ fn setup(
     commands
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
-                // Configure the projection to better fit the scene
+                color: Color::Rgba {
+                    red: 1.0,
+                    green: 0.7,
+                    blue: 0.5,
+                    alpha: 1.0,
+                },
+                illuminance: 100_000.0,
                 shadow_projection: OrthographicProjection {
                     left: -PLANET_SIZE,
                     right: PLANET_SIZE,
@@ -135,7 +146,13 @@ fn setup(
     commands
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
-                // Configure the projection to better fit the scene
+                color: Color::Rgba {
+                    red: 0.7,
+                    green: 0.7,
+                    blue: 1.0,
+                    alpha: 1.0,
+                },
+                illuminance: 10_000.0,
                 shadow_projection: OrthographicProjection {
                     left: -PLANET_SIZE,
                     right: PLANET_SIZE,
@@ -309,7 +326,12 @@ fn shoot_cannon_ball(
                 radius: PLAYER_SIZE / 2.0,
                 subdivisions: 16,
             })),
-            material: materials.add(Color::rgb(0.3, 0.3, 0.3).into()),
+            material: materials.add(StandardMaterial {
+                base_color: Color::rgb(0.3, 0.3, 0.3).into(),
+                perceptual_roughness: 0.3,
+                metallic: 0.8,
+                ..default()
+            }),
             transform: Transform::from_translation(position),
             ..default()
         })
