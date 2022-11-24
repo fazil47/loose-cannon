@@ -7,6 +7,23 @@ use bevy_rapier3d::prelude::*;
 
 use loose_cannon::cubemap::{construct_skybox, Cubemap, CubemapMaterial};
 
+// TODO: limit firing rate
+// TODO: cannon balls should disappear on impact
+// TODO: Refactor
+// TODO: game over when a cannon ball hits the player
+// TODO: add a single type of enemy
+// TODO: enemies should spawn from reasonably spaced random points
+// TODO: game over ui
+// TODO: count score (in proportion to number of enemies killed)
+// TODO: show score in ui
+// TODO: cannon ball explosion vfx
+// TODO: cannon ball shooting vfx
+// TODO: cannon ball explosion sfx
+// TODO: cannon ball shooting sfx
+// TODO: add grass to planet
+// TODO: add trees to planet
+// TODO: add mesh for enemy spawn point
+
 const CUBEMAP: &(&str, CompressedImageFormats) = &(
     "textures/skybox/corona_skybox.png",
     CompressedImageFormats::NONE,
@@ -123,17 +140,17 @@ fn setup(
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
                 color: Color::Rgba {
-                    red: 1.0,
+                    red: 0.9,
                     green: 0.7,
-                    blue: 0.5,
+                    blue: 1.0,
                     alpha: 1.0,
                 },
                 illuminance: 100_000.0,
                 shadow_projection: OrthographicProjection {
-                    left: -PLANET_SIZE,
-                    right: PLANET_SIZE,
-                    bottom: -PLANET_SIZE,
-                    top: PLANET_SIZE,
+                    left: -2.0 * PLANET_SIZE,
+                    right: 2.0 * PLANET_SIZE,
+                    bottom: -2.0 * PLANET_SIZE,
+                    top: 2.0 * PLANET_SIZE,
                     near: -10.0 * PLANET_SIZE,
                     far: 10.0 * PLANET_SIZE,
                     ..default()
@@ -162,10 +179,10 @@ fn setup(
                 },
                 illuminance: 10_000.0,
                 shadow_projection: OrthographicProjection {
-                    left: -PLANET_SIZE,
-                    right: PLANET_SIZE,
-                    bottom: -PLANET_SIZE,
-                    top: PLANET_SIZE,
+                    left: -2.0 * PLANET_SIZE,
+                    right: 2.0 * PLANET_SIZE,
+                    bottom: -2.0 * PLANET_SIZE,
+                    top: 2.0 * PLANET_SIZE,
                     near: -10.0 * PLANET_SIZE,
                     far: 10.0 * PLANET_SIZE,
                     ..default()
