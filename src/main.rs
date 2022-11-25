@@ -7,9 +7,9 @@ use bevy_rapier3d::prelude::*;
 
 use loose_cannon::cubemap::{construct_skybox, Cubemap, CubemapMaterial};
 
-// TODO: limit firing rate
-// TODO: cannon balls should disappear on impact
+// TODO: Set player cursor position in a resource
 // TODO: Refactor
+// TODO: Restrict player collider altitude
 // TODO: game over when a cannon ball hits the player
 // TODO: add a single type of enemy
 // TODO: enemies should spawn from reasonably spaced random points
@@ -34,6 +34,7 @@ const FIRE_DELAY: f32 = 2.0; // Delay in seconds until the next cannon can be fi
 const CAMERA_DISTANCE: f32 = 60.0;
 const GRAVITY_MAGNITUDE: f32 = 3.0;
 const PLAYER_IMPULSE_MAGNITUDE: f32 = 200.0;
+const CANNON_BALL_INITIAL_OFFSET: f32 = 3.0;
 const SHOW_DEBUG_LINES: bool = false;
 
 #[derive(Component)]
@@ -59,6 +60,7 @@ fn main() {
         .add_system(gravity)
         .add_system(player_input)
         .add_system(move_camera)
+        .add_system(handle_collisions)
         .add_system(construct_skybox)
         .run();
 }
@@ -322,7 +324,7 @@ fn player_input(
                     commands,
                     meshes,
                     materials,
-                    player_mesh_transform.translation - tangent,
+                    player_mesh_transform.translation - (tangent * CANNON_BALL_INITIAL_OFFSET),
                     -tangent,
                 )
             }
@@ -362,6 +364,32 @@ fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     }
 }
 
+// System to handle collision events
+fn handle_collisions(
+    mut commands: Commands,
+    mut collision_events: EventReader<CollisionEvent>,
+    player_collider_query: Query<With<PlayerCollider>>,
+    cannon_ball_query: Query<With<CannonBall>>,
+) {
+    for collsion_event in collision_events.iter() {
+        // Check only when collision has started
+        if let CollisionEvent::Started(collider, other_collider, _) = collsion_event {
+            // If collider has a PlayerCollider component
+            if let Ok(_) = player_collider_query.get(*collider) {
+                // TODO: Set game over
+                // commands.entity(*collider).despawn();
+                commands.entity(*other_collider).despawn();
+            } else if let Ok(_) = cannon_ball_query.get(*collider) {
+                commands.entity(*collider).despawn();
+
+                if let Ok(_) = cannon_ball_query.get(*other_collider) {
+                    commands.entity(*other_collider).despawn();
+                }
+            }
+        }
+    }
+}
+
 // Shoot cannon ball helper function
 fn shoot_cannon_ball(
     mut commands: Commands,
@@ -387,6 +415,7 @@ fn shoot_cannon_ball(
         })
         .insert(CannonBall {})
         .insert(Collider::ball(PLAYER_SIZE))
+        .insert(ActiveEvents::COLLISION_EVENTS)
         .insert(RigidBody::Dynamic)
         .insert(Damping {
             linear_damping: 0.1,
