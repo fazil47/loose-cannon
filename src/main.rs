@@ -30,6 +30,7 @@ const CUBEMAP: &(&str, CompressedImageFormats) = &(
 );
 const PLANET_SIZE: f32 = 20.0;
 const PLAYER_SIZE: f32 = 1.0;
+const FIRE_DELAY: f32 = 2.0; // Delay in seconds until the next cannon can be fired
 const CAMERA_DISTANCE: f32 = 60.0;
 const GRAVITY_MAGNITUDE: f32 = 3.0;
 const PLAYER_IMPULSE_MAGNITUDE: f32 = 200.0;
@@ -42,6 +43,9 @@ struct PlayerCollider {}
 
 #[derive(Component)]
 struct CannonBall {}
+
+#[derive(Resource)]
+struct ShootTimer(Timer);
 
 fn main() {
     App::new()
@@ -65,6 +69,11 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
+    // Insert resouce to keep track of time until the next cannon ball can be fired
+    let mut timer = Timer::from_seconds(FIRE_DELAY, TimerMode::Once);
+    timer.tick(timer.duration());
+    commands.insert_resource(ShootTimer(timer));
+
     // planet
     commands
         .spawn(PbrBundle {
@@ -229,6 +238,8 @@ fn player_input(
     windows: Res<Windows>,
     rapier_context: Res<RapierContext>,
     mut lines: ResMut<DebugLines>,
+    time: Res<Time>,
+    mut shoot_timer: ResMut<ShootTimer>,
     mut player_collider_query: Query<
         (&Transform, &mut ExternalImpulse),
         (With<PlayerCollider>, Without<PlayerMesh>),
@@ -291,11 +302,18 @@ fn player_input(
             // player_transform.rotate_local_y(player_mesh_angle);
             player_mesh_transform.look_at(target, camera_transform.back());
 
+            // the player can shoot only after the timer is up
+            if !shoot_timer.0.tick(time.delta()).finished() {
+                return;
+            }
+
             // If the left mouse button is pressed, apply an impulse in the direction of the tangent
             if buttons.just_pressed(MouseButton::Left) {
                 if SHOW_DEBUG_LINES {
                     lines.line(ray.origin, hit_point, 20.0);
                 }
+
+                shoot_timer.0.reset();
 
                 player_c_impulse.impulse = tangent * PLAYER_IMPULSE_MAGNITUDE;
 
