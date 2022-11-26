@@ -5,8 +5,10 @@ use bevy::prelude::{
 use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
 
-use crate::constants::{CANNON_BALL_INITIAL_OFFSET, SHOW_DEBUG_LINES};
-use crate::player::{PlayerCollider, PlayerMeshDesiredTransform};
+use crate::{
+    constants::{CANNON_BALL_INITIAL_OFFSET, SHOW_DEBUG_LINES},
+    player::{PlayerCollider, PlayerMeshDesiredTransform},
+};
 
 // RESOURCES
 

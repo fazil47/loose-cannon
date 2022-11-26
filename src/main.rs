@@ -2,14 +2,16 @@ use bevy::prelude::{App, MaterialPlugin};
 use bevy::DefaultPlugins;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
-
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
-use loose_cannon::cannonball::shoot_cannon_ball;
-use loose_cannon::common::{gravity, handle_collisions, move_camera};
-use loose_cannon::cubemap::{construct_skybox, CubemapMaterial};
-use loose_cannon::input::{handle_player_input, ShootEvent};
-use loose_cannon::player::{apply_player_collider_impulse, set_player_mesh_transform};
-use loose_cannon::setup::setup;
+
+use loose_cannon::{
+    cannon_ball::shoot_cannon_ball,
+    common::{gravity, handle_collisions, move_camera},
+    cubemap::{construct_skybox, CubemapMaterial},
+    input::{handle_player_input, ShootEvent},
+    player::{apply_player_collider_impulse, set_player_mesh_transform},
+    setup::setup,
+};
 
 // TODO: restrict player collider altitude
 // TODO: player rotation should be smooth

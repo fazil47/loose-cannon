@@ -4,7 +4,7 @@ use bevy::prelude::{
 use bevy_rapier3d::prelude::{CollisionEvent, ExternalForce};
 
 use crate::{
-    cannonball::CannonBall,
+    cannon_ball::CannonBall,
     constants::{CAMERA_DISTANCE, GRAVITY_MAGNITUDE},
     player::PlayerCollider,
 };

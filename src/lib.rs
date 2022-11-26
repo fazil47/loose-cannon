@@ -1,4 +1,4 @@
-pub mod cannonball;
+pub mod cannon_ball;
 pub mod common;
 pub mod constants;
 pub mod cubemap;

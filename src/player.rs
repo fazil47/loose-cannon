@@ -1,9 +1,11 @@
 use bevy::prelude::{Component, EventReader, Query, Res, Resource, Transform, Vec3, With};
 use bevy_rapier3d::prelude::ExternalImpulse;
 
-use crate::constants::{PLANET_SIZE, PLAYER_IMPULSE_MAGNITUDE};
-use crate::extensions::TransformExt;
-use crate::input::ShootEvent;
+use crate::{
+    constants::{PLANET_SIZE, PLAYER_IMPULSE_MAGNITUDE},
+    extensions::TransformExt,
+    input::ShootEvent,
+};
 
 // COMPONENTS
 
