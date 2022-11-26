@@ -17,17 +17,15 @@ use bevy::{
     },
 };
 
+// RESOURCES
+
 #[derive(Resource)]
 pub struct Cubemap {
     pub image_handle: Handle<Image>,
     pub is_loaded: bool,
 }
 
-#[derive(Debug, Clone, TypeUuid)]
-#[uuid = "9509a0f8-3c05-48ee-a13e-a93226c7f488"]
-pub struct CubemapMaterial {
-    base_color_texture: Option<Handle<Image>>,
-}
+// SYSTEMS
 
 // Has to be called after Cubemap resource has been inserted
 pub fn construct_skybox(
@@ -67,6 +65,14 @@ pub fn construct_skybox(
 
         cubemap.is_loaded = true;
     }
+}
+
+// MATERIALS
+
+#[derive(Debug, Clone, TypeUuid)]
+#[uuid = "9509a0f8-3c05-48ee-a13e-a93226c7f488"]
+pub struct CubemapMaterial {
+    base_color_texture: Option<Handle<Image>>,
 }
 
 impl Material for CubemapMaterial {
