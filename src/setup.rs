@@ -22,6 +22,7 @@ use crate::{
     player::{PlayerCollider, PlayerMesh, PlayerMeshDesiredTransform},
 };
 
+// Setup startup system
 pub fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
