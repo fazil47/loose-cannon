@@ -27,10 +27,8 @@ pub struct ShootEvent {
 
 // SYSTEMS
 
-/*
-Handles change in cursor position, updates PlayerMeshDesiredTransform resource
-And sends ShootEvent on LMB click based on the ShootTimer resource
-*/
+// Handles change in cursor position, updates PlayerMeshDesiredTransform resource
+// And sends ShootEvent on LMB click based on the ShootTimer resource
 pub fn handle_player_input(
     mut player_input: ResMut<PlayerInput>,
     mut player_mesh_desired_transform: ResMut<PlayerMeshDesiredTransform>,
