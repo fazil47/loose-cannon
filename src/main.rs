@@ -1,6 +1,6 @@
 use bevy::prelude::{App, MaterialPlugin};
 use bevy::DefaultPlugins;
-use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_editor_pls::prelude::EditorPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
 
@@ -35,7 +35,7 @@ fn main() {
         .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         // .add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(EditorPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
         .add_system(gravity)
