@@ -142,7 +142,7 @@ pub fn setup(
             },
             transform: Transform {
                 translation: Vec3::new(0.0, 2.0, 0.0),
-                rotation: Quat::from_rotation_y(PI / 3.0),
+                rotation: Quat::from_rotation_y(PI / 4.0),
                 ..default()
             },
             ..default()
@@ -174,7 +174,7 @@ pub fn setup(
             },
             transform: Transform {
                 translation: Vec3::new(0.0, 2.0, 0.0),
-                rotation: Quat::from_rotation_y(4.0 * PI / 3.0),
+                rotation: Quat::from_rotation_y(PI),
                 ..default()
             },
             ..default()
