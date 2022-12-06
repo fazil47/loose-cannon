@@ -6,6 +6,7 @@ use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
 
 use crate::{
+    common::GameState,
     constants::{CANNON_BALL_INITIAL_OFFSET, SHOW_DEBUG_LINES},
     player::{PlayerCollider, PlayerMeshDesiredTransform},
 };
@@ -36,6 +37,7 @@ pub fn handle_player_input(
     mut player_mesh_desired_transform: ResMut<PlayerMeshDesiredTransform>,
     mut shoot_timer: ResMut<ShootTimer>,
     time: Res<Time>,
+    game_state: Res<GameState>,
     rapier_context: Res<RapierContext>,
     mut lines: ResMut<DebugLines>,
     buttons: Res<Input<MouseButton>>,
@@ -44,6 +46,10 @@ pub fn handle_player_input(
     camera_query: Query<(&GlobalTransform, &Camera)>,
     player_collider_query: Query<&Transform, With<PlayerCollider>>,
 ) {
+    if game_state.game_over {
+        return;
+    }
+
     let window: &Window = windows.get_primary().unwrap();
     let (camera_transform, camera) = camera_query.iter().next().unwrap();
     let player_collider_transform = player_collider_query.single();

@@ -14,12 +14,10 @@ use loose_cannon::{
     setup::setup,
 };
 
-// TODO: restrict player collider altitude
-// TODO: player rotation should be smooth
-// TODO: game over when a cannon ball hits the player
-// TODO: add a single type of enemy
-// TODO: enemies should spawn from reasonably spaced random points
 // TODO: game over ui
+// TODO: add a single type of enemy
+// TODO: player rotation should be smooth
+// TODO: enemies should spawn from reasonably spaced random points
 // TODO: count score (in proportion to number of enemies killed)
 // TODO: show score in ui
 // TODO: cannon ball explosion vfx

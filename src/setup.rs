@@ -12,10 +12,11 @@ use bevy::{
 };
 use bevy_rapier3d::prelude::{
     CoefficientCombineRule, Collider, ColliderMassProperties, Damping, ExternalForce,
-    ExternalImpulse, Friction, GravityScale, Restitution, RigidBody,
+    ExternalImpulse, Friction, GravityScale, Restitution, RigidBody, Sleeping,
 };
 
 use crate::{
+    common::GameState,
     constants::{CAMERA_DISTANCE, CUBEMAP, FIRE_DELAY, PLANET_SIZE, PLAYER_SIZE},
     cubemap::Cubemap,
     input::{PlayerInput, ShootTimer},
@@ -38,6 +39,12 @@ pub fn setup(
     let mut timer = Timer::from_seconds(FIRE_DELAY, TimerMode::Once);
     timer.tick(timer.duration());
     commands.insert_resource(ShootTimer(timer));
+
+    // Insert resource to keep track of game state
+    commands.insert_resource(GameState {
+        score: 0,
+        game_over: false,
+    });
 
     // Planet
     commands
@@ -94,6 +101,7 @@ pub fn setup(
         .insert(PlayerCollider {})
         .insert(Collider::ball(PLAYER_SIZE))
         .insert(RigidBody::Dynamic)
+        .insert(Sleeping::default())
         .insert(Damping {
             linear_damping: 0.1,
             angular_damping: 0.2,
