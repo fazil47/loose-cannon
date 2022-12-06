@@ -4,6 +4,7 @@ use bevy_editor_pls::prelude::EditorPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
 
+use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use loose_cannon::{
     cannon_ball::shoot_cannon_ball,
     common::{gravity, handle_collisions, move_camera},
@@ -34,7 +35,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        // .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(EditorPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)

@@ -64,7 +64,7 @@ pub fn move_camera(
 // Custom gravity which acts towards the center of the planet (which is at the origin)
 pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     for (transform, mut force) in query.iter_mut() {
-        let grav_force_magnitude = transform.translation.length().powi(2) * GRAVITY_MAGNITUDE;
+        let grav_force_magnitude = transform.translation.length().powi(3) * GRAVITY_MAGNITUDE;
         force.force = grav_force_magnitude * -transform.translation.normalize();
     }
 }
