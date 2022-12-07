@@ -6,3 +6,4 @@ pub mod extensions;
 pub mod input;
 pub mod player;
 pub mod setup;
+pub mod ui;

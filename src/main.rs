@@ -5,6 +5,7 @@ use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
 
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
+use loose_cannon::ui::setup_ui;
 use loose_cannon::{
     cannon_ball::shoot_cannon_ball,
     common::{gravity, handle_collisions, move_camera},
@@ -16,10 +17,10 @@ use loose_cannon::{
 
 // TODO: game over ui
 // TODO: add a single type of enemy
-// TODO: player rotation should be smooth
 // TODO: enemies should spawn from reasonably spaced random points
 // TODO: count score (in proportion to number of enemies killed)
 // TODO: show score in ui
+// TODO: player rotation should be smooth
 // TODO: cannon ball explosion vfx
 // TODO: cannon ball shooting vfx
 // TODO: cannon ball explosion sfx
@@ -37,6 +38,7 @@ fn main() {
         .add_plugin(EditorPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
+        .add_startup_system(setup_ui)
         .add_system(gravity)
         .add_system(handle_player_input)
         .add_system(set_player_mesh_transform)
