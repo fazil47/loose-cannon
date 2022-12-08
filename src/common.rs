@@ -1,7 +1,7 @@
 use bevy::{
     prelude::{
-        Camera3d, Commands, Entity, EventReader, NonSend, Query, Res, ResMut, Resource, Transform,
-        Vec3, With, Without,
+        Camera3d, Commands, Entity, EventReader, EventWriter, NonSend, Query, Res, ResMut,
+        Resource, Transform, Vec3, With, Without,
     },
     window::WindowId,
     winit::WinitWindows,
@@ -23,6 +23,10 @@ pub struct GameState {
     pub score: u32,
     pub game_over: bool,
 }
+
+// EVENTS
+
+pub struct GameOverEvent {}
 
 // STARTUP SYSTEMS
 
@@ -50,18 +54,20 @@ pub fn setup_window(windows: NonSend<WinitWindows>) {
 // System to handle collision events
 pub fn handle_collisions(
     mut commands: Commands,
-    mut collision_events: EventReader<CollisionEvent>,
+    mut game_state: ResMut<GameState>,
+    mut ev_collision: EventReader<CollisionEvent>,
+    mut ev_game_over: EventWriter<GameOverEvent>,
     player_collider_query: Query<Entity, With<PlayerCollider>>,
     cannon_ball_query: Query<Entity, With<CannonBall>>,
     mut sleepable_rigidbody_query: Query<&mut Sleeping, With<RigidBody>>,
-    mut game_state: ResMut<GameState>,
 ) {
-    for collsion_event in collision_events.iter() {
+    for collsion_event in ev_collision.iter() {
         // Check only when collision has started
         if let CollisionEvent::Started(collider, other_collider, _) = collsion_event {
             // If collider has a PlayerCollider component
             if let Ok(_entity) = player_collider_query.get(*collider) {
                 game_state.game_over = true;
+                ev_game_over.send(GameOverEvent {});
 
                 // Put all rigidbodies to sleep
                 for mut rigidbody in sleepable_rigidbody_query.iter_mut() {

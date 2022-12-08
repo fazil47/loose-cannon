@@ -6,8 +6,8 @@ use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
 
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
-use loose_cannon::common::setup_window;
-use loose_cannon::ui::setup_ui;
+use loose_cannon::common::{setup_window, GameOverEvent};
+use loose_cannon::ui::{setup_ui, show_game_over};
 use loose_cannon::{
     cannon_ball::shoot_cannon_ball,
     common::{gravity, handle_collisions, move_camera},
@@ -17,17 +17,17 @@ use loose_cannon::{
     setup::setup,
 };
 
-// TODO: game over ui
+// TODO: add functionality to restart button
 // TODO: add a single type of enemy
 // TODO: enemies should spawn from reasonably spaced random points
 // TODO: count score (in proportion to number of enemies killed)
 // TODO: show score in ui
-// TODO: player rotation should be smooth
 // TODO: cannon ball explosion vfx
 // TODO: cannon ball shooting vfx
 // TODO: cannon ball explosion sfx
 // TODO: cannon ball shooting sfx
 // TODO: add grass to planet
+// TODO: player rotation should be smooth
 // TODO: add trees to planet
 // TODO: add mesh for enemy spawn point
 
@@ -56,6 +56,8 @@ fn main() {
         .add_system(move_camera)
         .add_system(handle_collisions)
         .add_system(construct_skybox)
+        .add_system(show_game_over)
         .add_event::<ShootEvent>()
+        .add_event::<GameOverEvent>()
         .run();
 }

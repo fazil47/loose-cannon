@@ -1,12 +1,19 @@
 use bevy::{
     prelude::{
-        AssetServer, BuildChildren, ButtonBundle, Color, Commands, Name, NodeBundle, Res,
-        TextBundle,
+        AssetServer, BuildChildren, ButtonBundle, Color, Commands, Component, EventReader, Name,
+        NodeBundle, Query, Res, TextBundle, Visibility, With,
     },
     text::TextStyle,
     ui::{AlignItems, FlexDirection, JustifyContent, Size, Style, UiRect, Val},
     utils::default,
 };
+
+use crate::common::GameOverEvent;
+
+// COMPONENTS
+
+#[derive(Component)]
+pub struct GameOverUI {}
 
 // STARTUP SYSTEMS
 
@@ -97,6 +104,8 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ..default()
                 })
                 .insert(Name::new("Game_Over_UI"))
+                .insert(GameOverUI {})
+                .insert(Visibility::INVISIBLE)
                 .with_children(|parent| {
                     // Game over text
                     parent
@@ -149,6 +158,13 @@ pub fn update_score() {
     todo!("System to update score text");
 }
 
-pub fn show_game_over() {
-    todo!("System to show game over menu by checking value of game state. The menu must contain a button to restart the game.")
+pub fn show_game_over(
+    mut ev_game_over: EventReader<GameOverEvent>,
+    mut game_over_ui_query: Query<&mut Visibility, With<GameOverUI>>,
+) {
+    let mut game_over_ui = game_over_ui_query.single_mut();
+
+    for _ev in ev_game_over.iter() {
+        game_over_ui.is_visible = true;
+    }
 }

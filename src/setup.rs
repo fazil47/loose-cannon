@@ -23,6 +23,7 @@ use crate::{
     player::{PlayerCollider, PlayerMesh, PlayerMeshDesiredTransform},
 };
 
+// TODO: Break this up and delete this module
 // Setup startup system
 pub fn setup(
     mut commands: Commands,
