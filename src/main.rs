@@ -1,10 +1,12 @@
-use bevy::prelude::{App, MaterialPlugin};
+use bevy::prelude::{default, App, MaterialPlugin, PluginGroup};
+use bevy::window::{WindowDescriptor, WindowPlugin};
 use bevy::DefaultPlugins;
 use bevy_editor_pls::prelude::EditorPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
 
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
+use loose_cannon::common::setup_window;
 use loose_cannon::ui::setup_ui;
 use loose_cannon::{
     cannon_ball::shoot_cannon_ball,
@@ -31,13 +33,20 @@ use loose_cannon::{
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                title: "Loose Cannon".to_string(),
+                ..default()
+            },
+            ..default()
+        }))
         .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(EditorPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
         .add_startup_system(setup)
+        .add_startup_system(setup_window)
         .add_startup_system(setup_ui)
         .add_system(gravity)
         .add_system(handle_player_input)
