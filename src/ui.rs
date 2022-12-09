@@ -1,170 +1,174 @@
 use bevy::{
     prelude::{
-        AssetServer, BuildChildren, ButtonBundle, Color, Commands, Component, EventReader, Name,
-        NodeBundle, Query, Res, TextBundle, Visibility, With,
+        AssetServer, BuildChildren, ButtonBundle, Changed, Color, Commands, Component, Name,
+        NodeBundle, Query, Res, ResMut, State, TextBundle, With,
     },
     text::TextStyle,
-    ui::{AlignItems, FlexDirection, JustifyContent, Size, Style, UiRect, Val},
+    ui::{
+        AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, Size, Style,
+        UiRect, Val,
+    },
     utils::default,
 };
 
-use crate::common::GameOverEvent;
+use crate::common::GameState;
+
+// CONSTANTS
+
+const NORMAL_BUTTON: Color = Color::rgb(1.0, 1.0, 1.0);
+const HOVERED_BUTTON: Color = Color::rgb(0.9, 0.9, 0.9);
+const PRESSED_BUTTON: Color = Color::rgb(0.8, 0.8, 0.8);
 
 // COMPONENTS
 
 #[derive(Component)]
-pub struct GameOverUI {}
+pub struct RestartButton {}
 
 // STARTUP SYSTEMS
 
 pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // UI root node
+    // In Game UI
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::FlexStart,
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Name::new("In_Game_UI"))
+        .with_children(|parent| {
+            // Score
+            parent
+                .spawn(
+                    TextBundle::from_section(
+                        "Score: 0",
+                        TextStyle {
+                            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(5.0)),
+                        flex_shrink: 1.0,
+                        ..default()
+                    }),
+                )
+                .insert(Name::new("Score_Indicator"));
+
+            // Reload time indicator
+            parent
+                .spawn(
+                    TextBundle::from_section(
+                        "Reload Timer",
+                        TextStyle {
+                            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(5.0)),
+                        flex_shrink: 1.0,
+                        ..default()
+                    }),
+                )
+                .insert(Name::new("Reload_Timer_Indicator"));
+        });
+}
+
+pub fn setup_game_over_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Game over text and restart button - Game Over UI
     commands
         .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                 flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(20.0)),
-                justify_content: JustifyContent::FlexStart,
+                justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..default()
             },
+            background_color: Color::rgb(0.25, 0.25, 0.25).into(),
             ..default()
         })
-        .insert(Name::new("UI_Root"))
+        .insert(Name::new("Game_Over_UI"))
         .with_children(|parent| {
-            // It's children are two nodes
-            // One containing the score and the reload time indicator
-            // The other containing the game over text and restart button
-
-            // Score and reload time indicator - In Game UI
+            // Game over text
             parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::SpaceBetween,
-                        align_items: AlignItems::FlexStart,
+                .spawn(
+                    TextBundle::from_section(
+                        "Game Over",
+                        TextStyle {
+                            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                            font_size: 50.0,
+                            color: Color::WHITE,
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(20.0)),
                         ..default()
-                    },
-                    ..default()
-                })
-                .insert(Name::new("In_Game_UI"))
-                .with_children(|parent| {
-                    // Score
-                    parent
-                        .spawn(
-                            TextBundle::from_section(
-                                "Score: 0",
-                                TextStyle {
-                                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                    font_size: 30.0,
-                                    color: Color::WHITE,
-                                },
-                            )
-                            .with_style(Style {
-                                margin: UiRect::all(Val::Px(5.0)),
-                                flex_shrink: 1.0,
-                                ..default()
-                            }),
-                        )
-                        .insert(Name::new("Score_Indicator"));
+                    }),
+                )
+                .insert(Name::new("Game_Over_Text"));
 
-                    // Reload time indicator
-                    parent
-                        .spawn(
-                            TextBundle::from_section(
-                                "Reload Timer",
-                                TextStyle {
-                                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                    font_size: 30.0,
-                                    color: Color::WHITE,
-                                },
-                            )
-                            .with_style(Style {
-                                margin: UiRect::all(Val::Px(5.0)),
-                                flex_shrink: 1.0,
-                                ..default()
-                            }),
-                        )
-                        .insert(Name::new("Reload_Timer_Indicator"));
-                });
-
-            // Game over text and restart button - Game Over UI
+            // Restart button
             parent
-                .spawn(NodeBundle {
+                .spawn(ButtonBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(70.0), Val::Percent(70.0)),
-                        flex_direction: FlexDirection::Column,
+                        size: Size::new(Val::Px(200.0), Val::Px(50.0)),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
+                        margin: UiRect::all(Val::Px(20.0)),
                         ..default()
                     },
-                    background_color: Color::rgb(0.25, 0.25, 0.25).into(),
                     ..default()
                 })
-                .insert(Name::new("Game_Over_UI"))
-                .insert(GameOverUI {})
-                .insert(Visibility::INVISIBLE)
+                .insert(Name::new("Restart_Button"))
+                .insert(RestartButton {})
                 .with_children(|parent| {
-                    // Game over text
-                    parent
-                        .spawn(
-                            TextBundle::from_section(
-                                "Game Over",
-                                TextStyle {
-                                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                    font_size: 50.0,
-                                    color: Color::WHITE,
-                                },
-                            )
-                            .with_style(Style {
-                                margin: UiRect::all(Val::Px(20.0)),
-                                ..default()
-                            }),
-                        )
-                        .insert(Name::new("Game_Over_Text"));
-
-                    // Restart button
-                    parent
-                        .spawn(ButtonBundle {
-                            style: Style {
-                                size: Size::new(Val::Px(200.0), Val::Px(50.0)),
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
-                                margin: UiRect::all(Val::Px(20.0)),
-                                ..default()
-                            },
-                            ..default()
-                        })
-                        .insert(Name::new("Restart_Button"))
-                        .with_children(|parent| {
-                            parent.spawn(TextBundle::from_section(
-                                "Restart",
-                                TextStyle {
-                                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                    font_size: 30.0,
-                                    color: Color::BLACK,
-                                },
-                            ));
-                        });
+                    parent.spawn(TextBundle::from_section(
+                        "Restart",
+                        TextStyle {
+                            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                            font_size: 30.0,
+                            color: Color::BLACK,
+                        },
+                    ));
                 });
         });
 }
 
 // SYSTEMS
 
+// This system runs only when state is set to Playing
 pub fn update_score() {
     todo!("System to update score text");
 }
 
-pub fn show_game_over(
-    mut ev_game_over: EventReader<GameOverEvent>,
-    mut game_over_ui_query: Query<&mut Visibility, With<GameOverUI>>,
+// This system runs only when state is set to GameOver
+pub fn restart_button_system(
+    mut state: ResMut<State<GameState>>,
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (Changed<Interaction>, With<RestartButton>),
+    >,
 ) {
-    let mut game_over_ui = game_over_ui_query.single_mut();
-
-    for _ev in ev_game_over.iter() {
-        game_over_ui.is_visible = true;
+    for (interaction, mut color) in interaction_query.iter_mut() {
+        match *interaction {
+            Interaction::None => {
+                *color = NORMAL_BUTTON.into();
+            }
+            Interaction::Hovered => {
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::Clicked => {
+                *color = PRESSED_BUTTON.into();
+                state.set(GameState::Playing).unwrap();
+            }
+        }
     }
 }

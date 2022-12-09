@@ -1,4 +1,4 @@
-use bevy::prelude::{default, App, MaterialPlugin, PluginGroup};
+use bevy::prelude::{default, App, MaterialPlugin, PluginGroup, SystemSet};
 use bevy::window::{WindowDescriptor, WindowPlugin};
 use bevy::DefaultPlugins;
 use bevy_editor_pls::prelude::EditorPlugin;
@@ -6,15 +6,16 @@ use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
 
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
-use loose_cannon::common::{setup_window, GameOverEvent};
-use loose_cannon::ui::{setup_ui, show_game_over};
+use loose_cannon::common::{setup_window, teardown, GameState};
+use loose_cannon::setup::setup_common;
+use loose_cannon::ui::{restart_button_system, setup_game_over_ui, setup_ui};
 use loose_cannon::{
     cannon_ball::shoot_cannon_ball,
     common::{gravity, handle_collisions, move_camera},
     cubemap::{construct_skybox, CubemapMaterial},
     input::{handle_player_input, ShootEvent},
     player::{apply_player_collider_impulse, set_player_mesh_transform},
-    setup::setup,
+    setup::setup_game,
 };
 
 // TODO: add functionality to restart button
@@ -45,19 +46,32 @@ fn main() {
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(EditorPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true))
-        .add_startup_system(setup)
+        .add_state(GameState::Playing)
         .add_startup_system(setup_window)
-        .add_startup_system(setup_ui)
-        .add_system(gravity)
-        .add_system(handle_player_input)
-        .add_system(set_player_mesh_transform)
-        .add_system(apply_player_collider_impulse)
-        .add_system(shoot_cannon_ball)
-        .add_system(move_camera)
-        .add_system(handle_collisions)
-        .add_system(construct_skybox)
-        .add_system(show_game_over)
+        .add_startup_system(setup_common)
+        .add_system_set(
+            SystemSet::on_enter(GameState::Playing)
+                .with_system(setup_game)
+                .with_system(setup_ui),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::Playing)
+                .with_system(gravity)
+                .with_system(handle_player_input)
+                .with_system(set_player_mesh_transform)
+                .with_system(apply_player_collider_impulse)
+                .with_system(shoot_cannon_ball)
+                .with_system(move_camera)
+                .with_system(handle_collisions)
+                .with_system(construct_skybox),
+        )
+        .add_system_set(SystemSet::on_exit(GameState::Playing).with_system(teardown))
+        .add_system_set(SystemSet::on_enter(GameState::GameOver).with_system(setup_game_over_ui))
+        .add_system_set(
+            SystemSet::on_update(GameState::GameOver).with_system(restart_button_system),
+        )
+        .add_system_set(SystemSet::on_exit(GameState::GameOver).with_system(teardown))
+        .add_system(bevy::window::close_on_esc)
         .add_event::<ShootEvent>()
-        .add_event::<GameOverEvent>()
         .run();
 }

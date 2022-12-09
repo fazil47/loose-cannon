@@ -28,7 +28,7 @@ pub fn shoot_cannon_ball(
                     subdivisions: 16,
                 })),
                 material: materials.add(StandardMaterial {
-                    base_color: Color::rgb(0.3, 0.3, 0.3).into(),
+                    base_color: Color::rgb(0.3, 0.3, 0.3),
                     perceptual_roughness: 0.3,
                     metallic: 0.8,
                     ..default()

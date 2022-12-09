@@ -1,7 +1,7 @@
 use bevy::{
     prelude::{
-        Camera3d, Commands, Entity, EventReader, EventWriter, NonSend, Query, Res, ResMut,
-        Resource, Transform, Vec3, With, Without,
+        Camera, Camera3d, Commands, DespawnRecursiveExt, Entity, EventReader, NonSend, Query,
+        ResMut, Resource, State, Transform, Vec3, With, Without,
     },
     window::WindowId,
     winit::WinitWindows,
@@ -16,17 +16,18 @@ use crate::{
     player::PlayerCollider,
 };
 
-// Resources
+// STATES
 
-#[derive(Resource)]
-pub struct GameState {
-    pub score: u32,
-    pub game_over: bool,
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum GameState {
+    Playing,
+    GameOver,
 }
 
-// EVENTS
+// RESOURCES
 
-pub struct GameOverEvent {}
+#[derive(Resource)]
+pub struct Score(pub u32);
 
 // STARTUP SYSTEMS
 
@@ -54,9 +55,8 @@ pub fn setup_window(windows: NonSend<WinitWindows>) {
 // System to handle collision events
 pub fn handle_collisions(
     mut commands: Commands,
-    mut game_state: ResMut<GameState>,
+    mut game_state: ResMut<State<GameState>>,
     mut ev_collision: EventReader<CollisionEvent>,
-    mut ev_game_over: EventWriter<GameOverEvent>,
     player_collider_query: Query<Entity, With<PlayerCollider>>,
     cannon_ball_query: Query<Entity, With<CannonBall>>,
     mut sleepable_rigidbody_query: Query<&mut Sleeping, With<RigidBody>>,
@@ -66,8 +66,7 @@ pub fn handle_collisions(
         if let CollisionEvent::Started(collider, other_collider, _) = collsion_event {
             // If collider has a PlayerCollider component
             if let Ok(_entity) = player_collider_query.get(*collider) {
-                game_state.game_over = true;
-                ev_game_over.send(GameOverEvent {});
+                game_state.overwrite_set(GameState::GameOver).unwrap();
 
                 // Put all rigidbodies to sleep
                 for mut rigidbody in sleepable_rigidbody_query.iter_mut() {
@@ -89,14 +88,9 @@ pub fn handle_collisions(
 
 // Move camera to follow the player
 pub fn move_camera(
-    game_state: Res<GameState>,
     mut camera_transforms: Query<&mut Transform, With<Camera3d>>,
     player_query: Query<&Transform, (With<PlayerCollider>, Without<Camera3d>)>,
 ) {
-    if game_state.game_over {
-        return;
-    }
-
     let mut camera_transform = camera_transforms.iter_mut().next().unwrap();
 
     let player_transform = player_query.single();
@@ -121,5 +115,12 @@ pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     for (transform, mut force) in query.iter_mut() {
         let grav_force_magnitude = transform.translation.length().powi(3) * GRAVITY_MAGNITUDE;
         force.force = grav_force_magnitude * -transform.translation.normalize();
+    }
+}
+
+// Remove all entities that are not a camera
+pub fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>) {
+    for entity in &entities {
+        commands.entity(entity).despawn_recursive();
     }
 }

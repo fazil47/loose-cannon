@@ -16,16 +16,25 @@ use bevy_rapier3d::prelude::{
 };
 
 use crate::{
-    common::GameState,
+    common::Score,
     constants::{CAMERA_DISTANCE, CUBEMAP, FIRE_DELAY, PLANET_SIZE, PLAYER_SIZE},
     cubemap::Cubemap,
     input::{PlayerInput, ShootTimer},
     player::{PlayerCollider, PlayerMesh, PlayerMeshDesiredTransform},
 };
 
+pub fn setup_common(mut commands: Commands) {
+    // Camera
+    // Querying doesn't work if I name the camera entity
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
+}
+
 // TODO: Break this up and delete this module
-// Setup startup system
-pub fn setup(
+// Setup startup system (doesn't setup camera)
+pub fn setup_game(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -42,10 +51,7 @@ pub fn setup(
     commands.insert_resource(ShootTimer(timer));
 
     // Insert resource to keep track of game state
-    commands.insert_resource(GameState {
-        score: 0,
-        game_over: false,
-    });
+    commands.insert_resource(Score(0));
 
     // Planet
     commands
@@ -55,7 +61,7 @@ pub fn setup(
                 subdivisions: 32,
             })),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgb(0.3, 0.5, 0.3).into(),
+                base_color: Color::rgb(0.3, 0.5, 0.3),
                 perceptual_roughness: 0.8,
                 metallic: 0.4,
                 ..default()
@@ -189,13 +195,6 @@ pub fn setup(
             ..default()
         })
         .insert(Name::new("Moon"));
-
-    // Camera
-    // Querying doesn't work if I name the camera entity
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
 
     // Ambient light
     commands.insert_resource(AmbientLight {
