@@ -168,7 +168,7 @@ pub fn restart_button_system(
             }
             Interaction::Clicked => {
                 *color = PRESSED_BUTTON.into();
-                game_state.overwrite_set(GameState::Playing).unwrap();
+                game_state.overwrite_replace(GameState::Playing).unwrap();
             }
         }
     }

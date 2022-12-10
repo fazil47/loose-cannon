@@ -18,7 +18,6 @@ use loose_cannon::{
     setup::setup_game,
 };
 
-// TODO: add functionality to restart button
 // TODO: add a single type of enemy
 // TODO: enemies should spawn from reasonably spaced random points
 // TODO: count score (in proportion to number of enemies killed)

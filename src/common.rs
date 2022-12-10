@@ -6,7 +6,7 @@ use bevy::{
     window::WindowId,
     winit::WinitWindows,
 };
-use bevy_rapier3d::prelude::{CollisionEvent, ExternalForce, RigidBody, Sleeping};
+use bevy_rapier3d::prelude::{CollisionEvent, ExternalForce};
 use image;
 use winit::window::Icon;
 
@@ -59,23 +59,27 @@ pub fn handle_collisions(
     mut ev_collision: EventReader<CollisionEvent>,
     player_collider_query: Query<Entity, With<PlayerCollider>>,
     cannon_ball_query: Query<Entity, With<CannonBall>>,
-    mut sleepable_rigidbody_query: Query<&mut Sleeping, With<RigidBody>>,
 ) {
     for collsion_event in ev_collision.iter() {
         // Check only when collision has started
         if let CollisionEvent::Started(collider, other_collider, _) = collsion_event {
             // If collider has a PlayerCollider component
             if let Ok(_entity) = player_collider_query.get(*collider) {
-                game_state.overwrite_set(GameState::GameOver).unwrap();
+                println!("Player hit!");
 
-                // Put all rigidbodies to sleep
-                for mut rigidbody in sleepable_rigidbody_query.iter_mut() {
-                    rigidbody.sleeping = true;
+                if game_state
+                    .overwrite_replace(GameState::GameOver)
+                    .ok()
+                    .is_none()
+                {
+                    println!("Error setting game state to GameOver");
                 }
 
-                // commands.entity(*collider).despawn();
+                commands.entity(*collider).despawn();
                 commands.entity(*other_collider).despawn();
             } else if let Ok(entity) = cannon_ball_query.get(*collider) {
+                println!("Cannon ball hit!");
+
                 commands.entity(entity).despawn();
 
                 if let Ok(entity) = cannon_ball_query.get(*other_collider) {
@@ -120,7 +124,8 @@ pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
 
 // Remove all entities that are not a camera
 pub fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>) {
-    for entity in &entities {
+    // despawn entities not in debug_lines_query
+    for entity in entities.iter() {
         commands.entity(entity).despawn_recursive();
     }
 }
