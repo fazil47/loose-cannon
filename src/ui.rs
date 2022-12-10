@@ -35,6 +35,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::SpaceBetween,
                 align_items: AlignItems::FlexStart,
+                padding: UiRect::all(Val::Px(15.0)),
                 ..default()
             },
             ..default()
@@ -151,7 +152,7 @@ pub fn update_score() {
 
 // This system runs only when state is set to GameOver
 pub fn restart_button_system(
-    mut state: ResMut<State<GameState>>,
+    mut game_state: ResMut<State<GameState>>,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<RestartButton>),
@@ -167,7 +168,7 @@ pub fn restart_button_system(
             }
             Interaction::Clicked => {
                 *color = PRESSED_BUTTON.into();
-                state.set(GameState::Playing).unwrap();
+                game_state.overwrite_set(GameState::Playing).unwrap();
             }
         }
     }
