@@ -19,13 +19,17 @@ use loose_cannon::{
 };
 
 // TODO: add a single type of enemy
-// TODO: enemies should spawn from reasonably spaced random points
+// -> enemies spawn at random locations which are not too close to the player or other enemies
+// -> enemies move towards the player
+// -> enemies despawn when they get hit by a cannon ball
+// -> game ends when an enemy reaches the player
 // TODO: count score (in proportion to number of enemies killed)
 // TODO: show score in ui
-// TODO: cannon ball explosion vfx
-// TODO: cannon ball shooting vfx
-// TODO: cannon ball explosion sfx
 // TODO: cannon ball shooting sfx
+// TODO: cannon ball shooting vfx
+// TODO: there should be a delay before the game gets over after the player dies
+// TODO: cannon ball explosion sfx
+// TODO: cannon ball explosion vfx
 // TODO: add grass to planet
 // TODO: player rotation should be smooth
 // TODO: add trees to planet
