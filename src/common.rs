@@ -6,7 +6,9 @@ use bevy::{
     window::WindowId,
     winit::WinitWindows,
 };
-use bevy_rapier3d::prelude::{CollisionEvent, ExternalForce};
+use bevy_rapier3d::prelude::{
+    CollisionEvent, ExternalForce, RapierColliderHandle, RapierContext, RapierRigidBodyHandle,
+};
 use image;
 use winit::window::Icon;
 
@@ -88,6 +90,35 @@ pub fn handle_collisions(
             }
         }
     }
+}
+
+pub fn reset_rapier(
+    mut commands: Commands,
+    mut rapier: ResMut<RapierContext>,
+    collider_handles: Query<Entity, With<RapierColliderHandle>>,
+    rb_handles: Query<Entity, With<RapierRigidBodyHandle>>,
+) {
+    // Force rapier to reload everything
+    for e in collider_handles.iter() {
+        commands.entity(e).remove::<RapierColliderHandle>();
+    }
+    for e in rb_handles.iter() {
+        commands.entity(e).remove::<RapierRigidBodyHandle>();
+    }
+
+    // Re-initialize everything we overwrite with default values
+    let context = RapierContext::default();
+    rapier.bodies = context.bodies;
+    rapier.colliders = context.colliders;
+    rapier.broad_phase = context.broad_phase;
+    rapier.narrow_phase = context.narrow_phase;
+    rapier.ccd_solver = context.ccd_solver;
+    rapier.impulse_joints = context.impulse_joints;
+    rapier.integration_parameters = context.integration_parameters;
+    rapier.islands = context.islands;
+    rapier.multibody_joints = context.multibody_joints;
+    rapier.pipeline = context.pipeline;
+    rapier.query_pipeline = context.query_pipeline;
 }
 
 // Move camera to follow the player

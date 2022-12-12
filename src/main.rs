@@ -11,7 +11,7 @@ use loose_cannon::setup::setup_common;
 use loose_cannon::ui::{restart_button_system, setup_game_over_ui, setup_ui};
 use loose_cannon::{
     cannon_ball::shoot_cannon_ball,
-    common::{gravity, handle_collisions, move_camera},
+    common::{gravity, handle_collisions, move_camera, reset_rapier},
     cubemap::{construct_skybox, CubemapMaterial},
     input::{handle_player_input, ShootEvent},
     player::{apply_player_collider_impulse, set_player_mesh_transform},
@@ -51,7 +51,8 @@ fn main() {
         .add_system_set(
             SystemSet::on_enter(GameState::Playing)
                 .with_system(setup_game)
-                .with_system(setup_ui),
+                .with_system(setup_ui)
+                .with_system(reset_rapier),
         )
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
