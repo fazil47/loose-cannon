@@ -52,15 +52,19 @@ pub fn handle_player_input(
     player_mesh_desired_transform.local_up = camera_transform.back();
     player_mesh_desired_transform.local_forward = camera_transform.up();
 
+    // Flag to check if the cursor is inside the window and over the planet collider
+    let mut invalid_cursor_pos = false;
+
+    // Raycast parameters
+    let max_toi = 600.0;
+    let solid = true;
+    let filter = QueryFilter::new();
+
     // If cursor is inside the window
     if let Some(cursor_pos) = window.cursor_position() {
         // Make a raycast from cursor world position parallel to camera direction
         // Could fail when interacting with UI while state gets overwritten
         if let Some(ray) = camera.viewport_to_world(camera_transform, cursor_pos) {
-            let max_toi = 600.0;
-            let solid = true;
-            let filter = QueryFilter::new();
-
             // If the raycast hits the planet collider
             if let Some((_entity, toi)) =
                 rapier_context.cast_ray(ray.origin, ray.direction, max_toi, solid, filter)
@@ -94,22 +98,32 @@ pub fn handle_player_input(
                         direction: -tangent,
                     });
                 }
-            } else if let Some(cursor_pos) = player_input.last_valid_cursor_pos {
-                let ray = camera
-                    .viewport_to_world(camera_transform, cursor_pos)
-                    .unwrap();
+            } else {
+                invalid_cursor_pos = true;
+            }
+        } else {
+            invalid_cursor_pos = true;
+        }
+    } else {
+        invalid_cursor_pos = true;
+    }
 
-                // This still needs to be checked because last_valid_cursor_pos won't be valid
-                // if the game window's position or size has changed
-                if let Some((_entity, toi)) =
-                    rapier_context.cast_ray(ray.origin, ray.direction, max_toi, solid, filter)
-                {
-                    let hit_point = ray.origin + (ray.direction * toi);
+    if invalid_cursor_pos {
+        if let Some(cursor_pos) = player_input.last_valid_cursor_pos {
+            let ray = camera
+                .viewport_to_world(camera_transform, cursor_pos)
+                .unwrap();
 
-                    let tangent = get_tangent_helper(hit_point, player_collider_transform);
+            // This still needs to be checked because last_valid_cursor_pos won't be valid
+            // if the game window's position or size has changed
+            if let Some((_entity, toi)) =
+                rapier_context.cast_ray(ray.origin, ray.direction, max_toi, solid, filter)
+            {
+                let hit_point = ray.origin + (ray.direction * toi);
 
-                    player_mesh_desired_transform.tangent = tangent;
-                }
+                let tangent = get_tangent_helper(hit_point, player_collider_transform);
+
+                player_mesh_desired_transform.tangent = tangent;
             }
         }
     }
