@@ -1,5 +1,11 @@
-use bevy::prelude::*;
-use bevy_rapier3d::prelude::*;
+use bevy::prelude::{
+    default, shape, Assets, Color, Commands, Component, EventReader, Mesh, PbrBundle, ResMut,
+    StandardMaterial, Transform, Vec3,
+};
+use bevy_rapier3d::prelude::{
+    ActiveEvents, CoefficientCombineRule, Collider, ColliderMassProperties, Damping, ExternalForce,
+    ExternalImpulse, Friction, GravityScale, Restitution, RigidBody,
+};
 
 use crate::{
     constants::{PLAYER_IMPULSE_MAGNITUDE, PLAYER_SIZE},
