@@ -1,13 +1,18 @@
-use bevy::prelude::{
-    Camera, EventWriter, GlobalTransform, Input, MouseButton, Query, Res, ResMut, Resource, Time,
-    Timer, Transform, Vec2, Vec3, Window, Windows, With,
+use bevy::{
+    prelude::{
+        Camera, Commands, EventWriter, GlobalTransform, Input, MouseButton, Query, Res, ResMut,
+        Resource, Time, Timer, Transform, Vec2, Vec3, Visibility, Window, Windows, With,
+    },
+    time::TimerMode,
 };
 use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
 
 use crate::{
-    constants::{CANNON_BALL_INITIAL_OFFSET, SHOW_DEBUG_LINES},
-    player::{PlayerCollider, PlayerMeshDesiredTransform},
+    cannon_ball::CANNON_BALL_INITIAL_OFFSET,
+    common::SHOW_DEBUG_LINES,
+    player::{PlayerCollider, PlayerMeshDesiredTransform, FIRE_DELAY},
+    ui::ReloadUI,
 };
 
 // RESOURCES
@@ -27,6 +32,20 @@ pub struct ShootEvent {
     pub direction: Vec3,
 }
 
+// STARTUP SYSTEMS
+
+pub fn setup_player_input(mut commands: Commands) {
+    // Insert resource to keep track of player cursor position
+    commands.insert_resource(PlayerInput {
+        last_valid_cursor_pos: Option::None,
+    });
+
+    // Insert resouce to keep track of time until the next cannon ball can be fired
+    let mut timer = Timer::from_seconds(FIRE_DELAY, TimerMode::Once);
+    timer.tick(timer.duration());
+    commands.insert_resource(ShootTimer(timer));
+}
+
 // SYSTEMS
 
 // Handles change in cursor position, updates PlayerMeshDesiredTransform resource
@@ -43,10 +62,12 @@ pub fn handle_player_input(
     mut ev_shoot: EventWriter<ShootEvent>,
     camera_query: Query<(&GlobalTransform, &Camera)>,
     player_collider_query: Query<&Transform, With<PlayerCollider>>,
+    mut reload_ui_query: Query<&mut Visibility, With<ReloadUI>>,
 ) {
     let window: &Window = windows.get_primary().unwrap();
     let (camera_transform, camera) = camera_query.iter().next().unwrap();
     let player_collider_transform = player_collider_query.single();
+    let mut reload_ui_visibility = reload_ui_query.single_mut();
 
     player_mesh_desired_transform.position = player_collider_transform.translation;
     player_mesh_desired_transform.local_up = camera_transform.back();
@@ -81,8 +102,13 @@ pub fn handle_player_input(
 
                 // the player can shoot only after the timer is up
                 if !shoot_timer.0.tick(time.delta()).finished() {
+                    // Show reload UI
+                    reload_ui_visibility.is_visible = true;
                     return;
                 }
+
+                // Hide the reload UI
+                reload_ui_visibility.is_visible = false;
 
                 // If the left mouse button is pressed, apply an impulse in the direction of the tangent
                 if buttons.just_pressed(MouseButton::Left) {

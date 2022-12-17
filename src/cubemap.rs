@@ -13,9 +13,16 @@ use bevy::{
             TextureViewDescriptor, TextureViewDimension,
         },
         renderer::RenderDevice,
-        texture::FallbackImage,
+        texture::{CompressedImageFormats, FallbackImage},
     },
 };
+
+// CONSTANTS
+
+pub const CUBEMAP_PATH: &(&str, CompressedImageFormats) = &(
+    "textures/skybox/corona_skybox.png",
+    CompressedImageFormats::NONE,
+);
 
 // RESOURCES
 
@@ -23,6 +30,17 @@ use bevy::{
 pub struct Cubemap {
     pub image_handle: Handle<Image>,
     pub is_loaded: bool,
+}
+
+// STARTUP SYSTEMS
+
+pub fn setup_cubemap(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Skybox
+    let skybox_handle = asset_server.load(CUBEMAP_PATH.0);
+    commands.insert_resource(Cubemap {
+        image_handle: skybox_handle,
+        is_loaded: false,
+    });
 }
 
 // SYSTEMS

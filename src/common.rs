@@ -1,22 +1,34 @@
 use bevy::{
     prelude::{
-        Camera, Camera3d, Commands, DespawnRecursiveExt, Entity, EventReader, NonSend, Query,
-        ResMut, Resource, State, Transform, Vec3, With, Without,
+        default, shape, AmbientLight, Assets, Camera, Camera3d, Camera3dBundle, Color, Commands,
+        DespawnRecursiveExt, DirectionalLight, DirectionalLightBundle, Entity, EventReader, Mesh,
+        Name, NonSend, OrthographicProjection, PbrBundle, Quat, Query, ResMut, Resource,
+        StandardMaterial, State, Transform, Vec3, With, Without,
     },
     window::WindowId,
     winit::WinitWindows,
 };
 use bevy_rapier3d::prelude::{
-    CollisionEvent, ExternalForce, RapierColliderHandle, RapierContext, RapierRigidBodyHandle,
+    CoefficientCombineRule, Collider, CollisionEvent, ExternalForce, Friction,
+    RapierColliderHandle, RapierContext, RapierRigidBodyHandle, Restitution,
 };
 use image;
+use std::f32::consts::PI;
 use winit::window::Icon;
 
-use crate::{
-    cannon_ball::CannonBall,
-    constants::{CAMERA_DISTANCE, GRAVITY_MAGNITUDE},
-    player::PlayerCollider,
-};
+use crate::{asteroid::Asteroid, cannon_ball::CannonBall, player::PlayerCollider};
+
+// CONSTANTS
+pub const SHOW_DEBUG_LINES: bool = false;
+pub const PLANET_SIZE: f32 = 20.0;
+pub const CAMERA_DISTANCE: f32 = 60.0;
+pub const GRAVITY_MAGNITUDE: f32 = 3.0;
+pub const SCORE_INCREMENT: i32 = 1;
+
+// RESOURCES
+
+#[derive(Resource)]
+pub struct Score(pub i32);
 
 // STATES
 
@@ -26,70 +38,120 @@ pub enum GameState {
     GameOver,
 }
 
-// RESOURCES
-
-#[derive(Resource)]
-pub struct Score(pub u32);
-
 // STARTUP SYSTEMS
 
-pub fn setup_window(windows: NonSend<WinitWindows>) {
-    let primary = windows.get_window(WindowId::primary()).unwrap();
+pub fn setup_state_independent(mut commands: Commands) {
+    // Insert resource to keep track of score
+    commands.insert_resource(Score(0));
 
-    // here we use the `image` crate to load our icon data from a png file
-    // this is not a very bevy-native solution, but it will do
-    let (icon_rgba, icon_width, icon_height) = {
-        let image = image::open("assets/icons/main_icon.png")
-            .expect("Failed to open icon path")
-            .into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        (rgba, width, height)
-    };
-
-    let icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
-
-    primary.set_window_icon(Some(icon));
+    // Spawn camera
+    // Querying doesn't work if I name the camera entity
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
 }
 
-// SYSTEMS
-
-// System to handle collision events
-pub fn handle_collisions(
+pub fn setup_scene(
     mut commands: Commands,
-    mut game_state: ResMut<State<GameState>>,
-    mut ev_collision: EventReader<CollisionEvent>,
-    player_collider_query: Query<Entity, With<PlayerCollider>>,
-    cannon_ball_query: Query<Entity, With<CannonBall>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for collsion_event in ev_collision.iter() {
-        // Check only when collision has started
-        if let CollisionEvent::Started(collider, other_collider, _) = collsion_event {
-            // If collider has a PlayerCollider component
-            if let Ok(_entity) = player_collider_query.get(*collider) {
-                println!("Player hit!");
+    // Planet
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Icosphere {
+                radius: PLANET_SIZE,
+                subdivisions: 32,
+            })),
+            material: materials.add(StandardMaterial {
+                base_color: Color::rgb(0.3, 0.5, 0.3),
+                perceptual_roughness: 0.8,
+                metallic: 0.4,
+                ..default()
+            }),
+            ..default()
+        })
+        .insert(Name::new("Planet"))
+        .insert(Collider::ball(20.0))
+        .insert(Friction {
+            coefficient: 2.0,
+            combine_rule: CoefficientCombineRule::Max,
+        })
+        .insert(Restitution {
+            coefficient: 0.0,
+            combine_rule: CoefficientCombineRule::Max,
+        });
 
-                if game_state
-                    .overwrite_replace(GameState::GameOver)
-                    .ok()
-                    .is_none()
-                {
-                    println!("Error setting game state to GameOver");
-                }
+    // Directional light - sun
+    commands
+        .spawn(DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                color: Color::Rgba {
+                    red: 0.9,
+                    green: 0.7,
+                    blue: 1.0,
+                    alpha: 1.0,
+                },
+                illuminance: 100_000.0,
+                shadow_projection: OrthographicProjection {
+                    left: -2.0 * PLANET_SIZE,
+                    right: 2.0 * PLANET_SIZE,
+                    bottom: -2.0 * PLANET_SIZE,
+                    top: 2.0 * PLANET_SIZE,
+                    near: -10.0 * PLANET_SIZE,
+                    far: 10.0 * PLANET_SIZE,
+                    ..default()
+                },
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                rotation: Quat::from_rotation_y(PI / 4.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Name::new("Sun"));
 
-                commands.entity(*collider).despawn();
-                commands.entity(*other_collider).despawn();
-            } else if let Ok(entity) = cannon_ball_query.get(*collider) {
-                println!("Cannon ball hit!");
+    // Directional light - moon
+    commands
+        .spawn(DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                color: Color::Rgba {
+                    red: 0.7,
+                    green: 0.7,
+                    blue: 1.0,
+                    alpha: 1.0,
+                },
+                illuminance: 10_000.0,
+                shadow_projection: OrthographicProjection {
+                    left: -2.0 * PLANET_SIZE,
+                    right: 2.0 * PLANET_SIZE,
+                    bottom: -2.0 * PLANET_SIZE,
+                    top: 2.0 * PLANET_SIZE,
+                    near: -10.0 * PLANET_SIZE,
+                    far: 10.0 * PLANET_SIZE,
+                    ..default()
+                },
+                shadows_enabled: true,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                rotation: Quat::from_rotation_y(5.0 * PI / 4.0),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Name::new("Moon"));
 
-                commands.entity(entity).despawn();
-
-                if let Ok(entity) = cannon_ball_query.get(*other_collider) {
-                    commands.entity(entity).despawn();
-                }
-            }
-        }
-    }
+    // Ambient light
+    commands.insert_resource(AmbientLight {
+        color: Color::rgb(1.0, 1.0, 0.8),
+        brightness: 0.4,
+    });
 }
 
 pub fn reset_rapier(
@@ -121,6 +183,69 @@ pub fn reset_rapier(
     rapier.query_pipeline = context.query_pipeline;
 }
 
+pub fn setup_window(windows: NonSend<WinitWindows>) {
+    let primary = windows.get_window(WindowId::primary()).unwrap();
+
+    // here we use the `image` crate to load our icon data from a png file
+    // this is not a very bevy-native solution, but it will do
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open("assets/icons/main_icon.png")
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+
+    let icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
+
+    primary.set_window_icon(Some(icon));
+}
+
+// SYSTEMS
+
+// System to handle collision events
+pub fn handle_collisions(
+    mut commands: Commands,
+    mut game_state: ResMut<State<GameState>>,
+    mut score: ResMut<Score>,
+    mut ev_collision: EventReader<CollisionEvent>,
+    player_collider_query: Query<Entity, With<PlayerCollider>>,
+    cannon_ball_query: Query<Entity, With<CannonBall>>,
+    asteroid_query: Query<Entity, With<Asteroid>>,
+) {
+    for collsion_event in ev_collision.iter() {
+        // Check only when collision has started
+        if let CollisionEvent::Started(collider, other_collider, _) = collsion_event {
+            if player_collider_query.get(*collider).is_ok()
+                || player_collider_query.get(*other_collider).is_ok()
+            {
+                if let Err(error) = game_state.overwrite_replace(GameState::GameOver) {
+                    println!("Error setting game state to GameOver: {}", error);
+                }
+            } else if cannon_ball_query.get(*collider).is_ok() {
+                if asteroid_query.get(*other_collider).is_ok() {
+                    score.0 += SCORE_INCREMENT;
+                    commands.entity(*collider).despawn();
+                    commands.entity(*other_collider).despawn();
+                } else if cannon_ball_query.get(*other_collider).is_ok() {
+                    commands.entity(*collider).despawn();
+                    commands.entity(*other_collider).despawn();
+                }
+            } else if asteroid_query.get(*collider).is_ok() {
+                if cannon_ball_query.get(*other_collider).is_ok() {
+                    score.0 += SCORE_INCREMENT;
+                    commands.entity(*collider).despawn();
+                    commands.entity(*other_collider).despawn();
+                } else if asteroid_query.get(*other_collider).is_ok() {
+                    commands.entity(*collider).despawn();
+                    commands.entity(*other_collider).despawn();
+                }
+            }
+        }
+    }
+}
+
 // Move camera to follow the player
 pub fn move_camera(
     mut camera_transforms: Query<&mut Transform, With<Camera3d>>,
@@ -148,15 +273,20 @@ pub fn move_camera(
 // Custom gravity which acts towards the center of the planet (which is at the origin)
 pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     for (transform, mut force) in query.iter_mut() {
-        let grav_force_magnitude = transform.translation.length().powi(3) * GRAVITY_MAGNITUDE;
+        let grav_force_magnitude = transform.translation.length().powi(2) * GRAVITY_MAGNITUDE;
         force.force = grav_force_magnitude * -transform.translation.normalize();
     }
 }
 
-// Remove all entities that are not a camera
+// Remove all entities that are not a camera and set score to 0
 pub fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>) {
     // despawn entities not in debug_lines_query
     for entity in entities.iter() {
         commands.entity(entity).despawn_recursive();
     }
+}
+
+// Reset score to 0
+pub fn reset_score(mut score: ResMut<Score>) {
+    score.0 = 0;
 }

@@ -7,10 +7,11 @@ use bevy_rapier3d::prelude::{
     ExternalImpulse, Friction, GravityScale, Restitution, RigidBody,
 };
 
-use crate::{
-    constants::{PLAYER_IMPULSE_MAGNITUDE, PLAYER_SIZE},
-    input::ShootEvent,
-};
+use crate::{input::ShootEvent, player::PLAYER_IMPULSE_MAGNITUDE, player::PLAYER_SIZE};
+
+// CONSTANTS
+
+pub const CANNON_BALL_INITIAL_OFFSET: f32 = 3.0;
 
 // COMPONENTS
 

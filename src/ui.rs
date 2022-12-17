@@ -1,9 +1,9 @@
 use bevy::{
     prelude::{
         AssetServer, BuildChildren, ButtonBundle, Changed, Color, Commands, Component, Name,
-        NodeBundle, Query, Res, ResMut, State, TextBundle, With,
+        NodeBundle, Query, Res, ResMut, State, TextBundle, Visibility, With,
     },
-    text::TextStyle,
+    text::{Text, TextStyle},
     ui::{
         AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, Size, Style,
         UiRect, Val,
@@ -11,7 +11,7 @@ use bevy::{
     utils::default,
 };
 
-use crate::common::GameState;
+use crate::common::{GameState, Score};
 
 // CONSTANTS
 
@@ -22,11 +22,17 @@ const PRESSED_BUTTON: Color = Color::rgb(0.8, 0.8, 0.8);
 // COMPONENTS
 
 #[derive(Component)]
+pub struct ScoreUI {}
+
+#[derive(Component)]
+pub struct ReloadUI {}
+
+#[derive(Component)]
 pub struct RestartButton {}
 
 // STARTUP SYSTEMS
 
-pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_game_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     // In Game UI
     commands
         .spawn(NodeBundle {
@@ -59,13 +65,14 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         ..default()
                     }),
                 )
-                .insert(Name::new("Score_Indicator"));
+                .insert(Name::new("Score_Indicator"))
+                .insert(ScoreUI {});
 
-            // Reload time indicator
+            // Reload indicator
             parent
                 .spawn(
                     TextBundle::from_section(
-                        "Reload Timer",
+                        "Reloading...",
                         TextStyle {
                             font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                             font_size: 30.0,
@@ -78,11 +85,17 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         ..default()
                     }),
                 )
-                .insert(Name::new("Reload_Timer_Indicator"));
+                .insert(Name::new("Reload_Indicator"))
+                .insert(ReloadUI {})
+                .insert(Visibility::INVISIBLE);
         });
 }
 
-pub fn setup_game_over_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_game_over_ui(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    score: Res<Score>,
+) {
     // Game over text and restart button - Game Over UI
     commands
         .spawn(NodeBundle {
@@ -103,6 +116,24 @@ pub fn setup_game_over_ui(mut commands: Commands, asset_server: Res<AssetServer>
                 .spawn(
                     TextBundle::from_section(
                         "Game Over",
+                        TextStyle {
+                            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                            font_size: 50.0,
+                            color: Color::WHITE,
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(20.0)),
+                        ..default()
+                    }),
+                )
+                .insert(Name::new("Game_Over_Text"));
+
+            // Final score
+            parent
+                .spawn(
+                    TextBundle::from_section(
+                        format!("Final Score: {}", score.0),
                         TextStyle {
                             font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                             font_size: 50.0,
@@ -146,8 +177,10 @@ pub fn setup_game_over_ui(mut commands: Commands, asset_server: Res<AssetServer>
 // SYSTEMS
 
 // This system runs only when state is set to Playing
-pub fn update_score() {
-    todo!("System to update score text");
+pub fn update_score_ui(score: Res<Score>, mut score_ui_query: Query<&mut Text, With<ScoreUI>>) {
+    let mut score_ui = score_ui_query.single_mut();
+
+    score_ui.sections[0].value = format!("Score: {}", score.0);
 }
 
 // This system runs only when state is set to GameOver
