@@ -110,20 +110,18 @@ pub fn handle_player_input(
 
     if invalid_cursor_pos {
         if let Some(cursor_pos) = player_input.last_valid_cursor_pos {
-            let ray = camera
-                .viewport_to_world(camera_transform, cursor_pos)
-                .unwrap();
-
-            // This still needs to be checked because last_valid_cursor_pos won't be valid
+            // Cursor position and raycast still needs to be checked because last_valid_cursor_pos won't be valid
             // if the game window's position or size has changed
-            if let Some((_entity, toi)) =
-                rapier_context.cast_ray(ray.origin, ray.direction, max_toi, solid, filter)
-            {
-                let hit_point = ray.origin + (ray.direction * toi);
+            if let Some(ray) = camera.viewport_to_world(camera_transform, cursor_pos) {
+                if let Some((_entity, toi)) =
+                    rapier_context.cast_ray(ray.origin, ray.direction, max_toi, solid, filter)
+                {
+                    let hit_point = ray.origin + (ray.direction * toi);
 
-                let tangent = get_tangent_helper(hit_point, player_collider_transform);
+                    let tangent = get_tangent_helper(hit_point, player_collider_transform);
 
-                player_mesh_desired_transform.tangent = tangent;
+                    player_mesh_desired_transform.tangent = tangent;
+                }
             }
         }
     }
