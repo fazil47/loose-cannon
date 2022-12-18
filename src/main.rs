@@ -13,6 +13,7 @@ use bevy_rapier3d::{
 use loose_cannon::{
     asteroid::{setup_asteroid, spawn_asteroid},
     cannon_ball::shoot_cannon_ball,
+    clouds::{setup_clouds, update_clouds, CloudMaterial},
     common::{
         gravity, handle_collisions, move_camera, reset_rapier, reset_score, setup_scene,
         setup_state_independent, setup_window, teardown, GameState,
@@ -47,6 +48,7 @@ fn main() {
                 }),
         )
         .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
+        .add_plugin(MaterialPlugin::<CloudMaterial>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(EditorPlugin)
@@ -61,6 +63,7 @@ fn main() {
                 .with_system(setup_cubemap)
                 .with_system(setup_player_input)
                 .with_system(setup_asteroid)
+                .with_system(setup_clouds)
                 .with_system(setup_game_ui)
                 .with_system(reset_rapier),
         )
@@ -74,6 +77,7 @@ fn main() {
                 .with_system(move_camera)
                 .with_system(handle_collisions)
                 .with_system(spawn_asteroid)
+                .with_system(update_clouds)
                 .with_system(update_score_ui)
                 .with_system(construct_skybox),
         )
