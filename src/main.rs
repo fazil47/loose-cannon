@@ -1,24 +1,26 @@
-use bevy::prelude::{default, App, AssetPlugin, MaterialPlugin, PluginGroup, SystemSet};
-use bevy::window::{WindowDescriptor, WindowPlugin};
-use bevy::DefaultPlugins;
+use bevy::{
+    prelude::{default, App, AssetPlugin, MaterialPlugin, PluginGroup, SystemSet},
+    window::{WindowDescriptor, WindowPlugin},
+    DefaultPlugins,
+};
 use bevy_editor_pls::prelude::EditorPlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
-use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
-use bevy_rapier3d::render::RapierDebugRenderPlugin;
+use bevy_rapier3d::{
+    prelude::{NoUserData, RapierPhysicsPlugin},
+    render::RapierDebugRenderPlugin,
+};
 
-use loose_cannon::common::{reset_score, setup_scene};
-use loose_cannon::ui::update_score_ui;
 use loose_cannon::{
     asteroid::{setup_asteroid, spawn_asteroid},
     cannon_ball::shoot_cannon_ball,
     common::{
-        gravity, handle_collisions, move_camera, reset_rapier, setup_state_independent,
-        setup_window, teardown, GameState,
+        gravity, handle_collisions, move_camera, reset_rapier, reset_score, setup_scene,
+        setup_state_independent, setup_window, teardown, GameState,
     },
     cubemap::{construct_skybox, setup_cubemap, CubemapMaterial},
     input::{handle_player_input, setup_player_input, ShootEvent},
     player::{apply_player_collider_impulse, set_player_mesh_transform, setup_player},
-    ui::{restart_button_system, setup_game_over_ui, setup_game_ui},
+    ui::{restart_button_system, setup_game_over_ui, setup_game_ui, update_score_ui},
 };
 
 // TODO: add clouds below planet

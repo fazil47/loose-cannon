@@ -1,6 +1,9 @@
 use bevy::{
     pbr::{MaterialPipeline, MaterialPipelineKey},
-    prelude::*,
+    prelude::{
+        default, shape, AssetServer, Assets, Commands, Handle, Image, Material, MaterialMeshBundle,
+        Mesh, Name, Res, ResMut, Resource,
+    },
     reflect::TypeUuid,
     render::{
         mesh::MeshVertexBufferLayout,

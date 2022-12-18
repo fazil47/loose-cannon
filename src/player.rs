@@ -1,7 +1,15 @@
-use bevy::{prelude::{
-    Commands, Component, EventReader, Query, Res, Resource, Transform, Vec3, With, AssetServer, default, Name,
-}, scene::SceneBundle, transform::TransformBundle};
-use bevy_rapier3d::prelude::{ExternalImpulse, Velocity, Collider, RigidBody, Damping, ColliderMassProperties, GravityScale, Friction, CoefficientCombineRule, Restitution, ExternalForce};
+use bevy::{
+    prelude::{
+        default, AssetServer, Commands, Component, EventReader, Name, Query, Res, Resource,
+        Transform, Vec3, With,
+    },
+    scene::SceneBundle,
+    transform::TransformBundle,
+};
+use bevy_rapier3d::prelude::{
+    CoefficientCombineRule, Collider, ColliderMassProperties, Damping, ExternalForce,
+    ExternalImpulse, Friction, GravityScale, Restitution, RigidBody, Velocity,
+};
 
 use crate::{common::PLANET_SIZE, extensions::TransformExt, input::ShootEvent};
 
