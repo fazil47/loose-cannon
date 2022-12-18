@@ -1,4 +1,4 @@
-use bevy::prelude::{default, App, MaterialPlugin, PluginGroup, SystemSet};
+use bevy::prelude::{default, App, AssetPlugin, MaterialPlugin, PluginGroup, SystemSet};
 use bevy::window::{WindowDescriptor, WindowPlugin};
 use bevy::DefaultPlugins;
 use bevy_editor_pls::prelude::EditorPlugin;
@@ -30,13 +30,20 @@ use loose_cannon::{
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                title: "Loose Cannon".to_string(),
-                ..default()
-            },
-            ..default()
-        }))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    window: WindowDescriptor {
+                        title: "Loose Cannon".to_string(),
+                        ..default()
+                    },
+                    ..default()
+                })
+                .set(AssetPlugin {
+                    watch_for_changes: true,
+                    ..default()
+                }),
+        )
         .add_plugin(MaterialPlugin::<CubemapMaterial>::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
