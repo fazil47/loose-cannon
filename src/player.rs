@@ -42,7 +42,7 @@ pub struct PlayerMeshDesiredTransform {
 pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Resource to store desired transform of player mesh
     commands.insert_resource(PlayerMeshDesiredTransform {
-        position: Vec3::new(0.0, 0.0, PLANET_SIZE + PLAYER_SIZE),
+        position: Vec3::new(0.0, 1.0, 1.0).normalize() * (PLANET_SIZE + PLAYER_SIZE),
         tangent: Vec3::new(0.0, 1.0, 0.0),
         local_up: Vec3::new(0.0, 0.0, 1.0),
         local_forward: Vec3::new(0.0, 1.0, 0.0),
@@ -59,11 +59,13 @@ pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(PlayerMesh {});
 
     // Player collider
+    let player_collider_translation =
+        Vec3::new(0.0, 0.8, 1.0).normalize() * (PLANET_SIZE + PLAYER_SIZE);
     commands
         .spawn(TransformBundle::from(Transform::from_xyz(
-            0.0,
-            0.0,
-            PLANET_SIZE + PLAYER_SIZE,
+            player_collider_translation.x,
+            player_collider_translation.y,
+            player_collider_translation.z,
         )))
         .insert(Name::new("PlayerCollider"))
         .insert(PlayerCollider {})

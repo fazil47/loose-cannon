@@ -10,7 +10,7 @@ use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
 
 use crate::{
     cannon_ball::CANNON_BALL_INITIAL_OFFSET,
-    common::SHOW_DEBUG_LINES,
+    common::{PrimaryCamera, SHOW_DEBUG_LINES},
     player::{PlayerCollider, PlayerMeshDesiredTransform, FIRE_DELAY},
     ui::ReloadUI,
 };
@@ -60,12 +60,12 @@ pub fn handle_player_input(
     buttons: Res<Input<MouseButton>>,
     windows: Res<Windows>,
     mut ev_shoot: EventWriter<ShootEvent>,
-    camera_query: Query<(&GlobalTransform, &Camera)>,
+    camera_query: Query<(&GlobalTransform, &Camera), With<PrimaryCamera>>,
     player_collider_query: Query<&Transform, With<PlayerCollider>>,
     mut reload_ui_query: Query<&mut Visibility, With<ReloadUI>>,
 ) {
     let window: &Window = windows.get_primary().unwrap();
-    let (camera_transform, camera) = camera_query.iter().next().unwrap();
+    let (camera_transform, camera) = camera_query.single();
     let player_collider_transform = player_collider_query.single();
     let mut reload_ui_visibility = reload_ui_query.single_mut();
 

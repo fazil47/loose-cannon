@@ -15,8 +15,8 @@ use loose_cannon::{
     cannon_ball::shoot_cannon_ball,
     clouds::{setup_clouds, update_clouds, CloudMaterial},
     common::{
-        gravity, handle_collisions, move_camera, reset_rapier, reset_score, setup_scene,
-        setup_state_independent, setup_window, teardown, GameState,
+        gravity, handle_collisions, move_camera, reset_camera, reset_rapier, reset_score,
+        setup_scene, setup_state_independent, setup_window, teardown, GameState,
     },
     cubemap::{construct_skybox, setup_cubemap, CubemapMaterial},
     input::{handle_player_input, setup_player_input, ShootEvent},
@@ -76,7 +76,7 @@ fn main() {
                 .with_system(shoot_cannon_ball)
                 .with_system(move_camera)
                 .with_system(handle_collisions)
-                .with_system(spawn_asteroid)
+                // .with_system(spawn_asteroid)
                 .with_system(update_clouds)
                 .with_system(update_score_ui)
                 .with_system(construct_skybox),
@@ -89,7 +89,8 @@ fn main() {
         .add_system_set(
             SystemSet::on_exit(GameState::GameOver)
                 .with_system(teardown)
-                .with_system(reset_score),
+                .with_system(reset_score)
+                .with_system(reset_camera),
         )
         .add_system(bevy::window::close_on_esc)
         .add_event::<ShootEvent>()

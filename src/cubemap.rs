@@ -76,7 +76,7 @@ pub fn construct_skybox(
         // spawn cube
         commands
             .spawn(MaterialMeshBundle::<CubemapMaterial> {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: 10000.0 })),
+                mesh: meshes.add(Mesh::from(shape::Cube { size: 1000.0 })),
                 material: cubemap_materials.add(CubemapMaterial {
                     base_color_texture: Some(cubemap.image_handle.clone_weak()),
                 }),

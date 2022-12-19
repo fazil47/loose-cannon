@@ -8,6 +8,8 @@ struct StandardMaterial {
 
 @group(1) @binding(0)
 var<uniform> material: StandardMaterial;
+@group(1) @binding(1)
+var<uniform> amplitude: f32;
 
 struct Vertex {
     @location(0) position: vec3<f32>,
@@ -64,7 +66,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 #endif
 
     out.color = vec4<f32>(1.0, 0.0, 0.0, 1.0);
-    out.world_position = mesh_position_local_to_world(model, vec4<f32>(vertex.position.x, sin(vertex.position.x * vertex.position.z), vertex.position.z, 1.0));
+    out.world_position = mesh_position_local_to_world(model, vec4<f32>(vertex.position.x, amplitude * sin(vertex.position.x * vertex.position.z * material.time), vertex.position.z, 1.0));
     out.clip_position = mesh_position_world_to_clip(out.world_position);
 
     return out;

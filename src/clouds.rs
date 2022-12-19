@@ -45,8 +45,11 @@ pub fn setup_clouds(
         .spawn(MaterialMeshBundle {
             mesh: meshes.add(cloud),
             transform: Transform::from_xyz(0.0, CLOUD_ALTITUDE, 0.0)
-                .with_scale(Vec3::new(100.0, 1.0, 100.0)),
-            material: materials.add(CloudMaterial { time: 0.0 }),
+                .with_scale(Vec3::new(8.0, 1.0, 8.0)),
+            material: materials.add(CloudMaterial {
+                time: 0.0,
+                amplitude: 50.0,
+            }),
             ..default()
         })
         .insert(Name::new("Clouds"));
@@ -85,6 +88,8 @@ impl Material for CloudMaterial {
 pub struct CloudMaterial {
     #[uniform(0)]
     time: f32,
+    #[uniform(1)]
+    amplitude: f32,
 }
 
 #[derive(Debug, Copy, Clone)]

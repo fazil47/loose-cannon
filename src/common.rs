@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{
-        default, shape, AmbientLight, Assets, Camera, Camera3d, Camera3dBundle, Color, Commands,
+        default, shape, AmbientLight, Assets, Camera, Camera3dBundle, Color, Commands, Component,
         DespawnRecursiveExt, DirectionalLight, DirectionalLightBundle, Entity, EventReader, Mesh,
         Name, NonSend, OrthographicProjection, PbrBundle, Quat, Query, ResMut, Resource,
         StandardMaterial, State, Transform, Vec3, With, Without,
@@ -25,6 +25,11 @@ pub const CAMERA_DISTANCE: f32 = 60.0;
 pub const GRAVITY_MAGNITUDE: f32 = 3.0;
 pub const SCORE_INCREMENT: i32 = 1;
 
+// COMPONENTS
+
+#[derive(Component)]
+pub struct PrimaryCamera {}
+
 // RESOURCES
 
 #[derive(Resource)]
@@ -44,12 +49,14 @@ pub fn setup_state_independent(mut commands: Commands) {
     // Insert resource to keep track of score
     commands.insert_resource(Score(0));
 
-    // Spawn camera
-    // Querying doesn't work if I name the camera entity
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+    // Spawn primary camera
+    commands
+        .spawn(Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE)
+                .looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        })
+        .insert(PrimaryCamera {});
 }
 
 pub fn setup_scene(
@@ -88,9 +95,9 @@ pub fn setup_scene(
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
                 color: Color::Rgba {
-                    red: 0.9,
+                    red: 1.0,
                     green: 0.7,
-                    blue: 1.0,
+                    blue: 0.7,
                     alpha: 1.0,
                 },
                 illuminance: 100_000.0,
@@ -108,21 +115,21 @@ pub fn setup_scene(
             },
             transform: Transform {
                 translation: Vec3::new(0.0, 2.0, 0.0),
-                rotation: Quat::from_rotation_y(PI / 4.0),
+                rotation: Quat::from_rotation_x(-PI / 2.0),
                 ..default()
             },
             ..default()
         })
         .insert(Name::new("Sun"));
 
-    // Directional light - moon
+    // Directional light - reflected sun
     commands
         .spawn(DirectionalLightBundle {
             directional_light: DirectionalLight {
                 color: Color::Rgba {
-                    red: 0.7,
-                    green: 0.7,
-                    blue: 1.0,
+                    red: 1.0,
+                    green: 1.0,
+                    blue: 0.5,
                     alpha: 1.0,
                 },
                 illuminance: 10_000.0,
@@ -139,13 +146,13 @@ pub fn setup_scene(
                 ..default()
             },
             transform: Transform {
-                translation: Vec3::new(0.0, 2.0, 0.0),
-                rotation: Quat::from_rotation_y(5.0 * PI / 4.0),
+                translation: Vec3::new(0.0, 0.0, -PLANET_SIZE * 3.0),
+                rotation: Quat::from_rotation_x(PI / 2.0),
                 ..default()
             },
             ..default()
         })
-        .insert(Name::new("Moon"));
+        .insert(Name::new("Reflected Sun"));
 
     // Ambient light
     commands.insert_resource(AmbientLight {
@@ -246,10 +253,10 @@ pub fn handle_collisions(
     }
 }
 
-// Move camera to follow the player
+// Move primary camera to follow the player
 pub fn move_camera(
-    mut camera_transforms: Query<&mut Transform, With<Camera3d>>,
-    player_query: Query<&Transform, (With<PlayerCollider>, Without<Camera3d>)>,
+    mut camera_transforms: Query<&mut Transform, With<PrimaryCamera>>,
+    player_query: Query<&Transform, (With<PlayerCollider>, Without<PrimaryCamera>)>,
 ) {
     let mut camera_transform = camera_transforms.iter_mut().next().unwrap();
 
@@ -278,9 +285,10 @@ pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
     }
 }
 
-// Remove all entities that are not a camera and set score to 0
+// CLEANUP SYSTEMS
+
+// Remove all entities except cameras
 pub fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>) {
-    // despawn entities not in debug_lines_query
     for entity in entities.iter() {
         commands.entity(entity).despawn_recursive();
     }
@@ -289,4 +297,12 @@ pub fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>
 // Reset score to 0
 pub fn reset_score(mut score: ResMut<Score>) {
     score.0 = 0;
+}
+
+// Reset primary camera to default transform
+pub fn reset_camera(mut camera_transform_query: Query<&mut Transform, With<PrimaryCamera>>) {
+    if let Some(mut camera_transform) = camera_transform_query.iter_mut().next() {
+        *camera_transform = Transform::from_translation(Vec3::new(0.0, 0.0, CAMERA_DISTANCE))
+            .looking_at(Vec3::ZERO, Vec3::Y);
+    }
 }
