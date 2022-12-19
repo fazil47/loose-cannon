@@ -1,7 +1,8 @@
 use bevy::{
     prelude::{
-        AssetServer, BuildChildren, ButtonBundle, Changed, Color, Commands, Component, Name,
-        NodeBundle, Query, Res, ResMut, State, TextBundle, Visibility, With,
+        AssetServer, BuildChildren, ButtonBundle, Camera3dBundle, Changed, Color, Commands,
+        Component, Name, NodeBundle, Query, Res, ResMut, State, TextBundle, Transform, Visibility,
+        With, Camera,
     },
     text::{Text, TextStyle},
     ui::{
@@ -96,6 +97,16 @@ pub fn setup_game_over_ui(
     asset_server: Res<AssetServer>,
     score: Res<Score>,
 ) {
+    // Camera for UI
+    commands.spawn((Camera3dBundle {
+        camera: Camera {
+            priority: 5,
+            ..default()
+        },
+        transform: Transform::default(),
+        ..default()
+    },));
+
     // Game over text and restart button - Game Over UI
     commands
         .spawn(NodeBundle {

@@ -8,6 +8,7 @@ use bevy::{
     window::WindowId,
     winit::WinitWindows,
 };
+use bevy_atmosphere::prelude::{AtmosphereCamera, AtmosphereModel, Gradient};
 use bevy_rapier3d::prelude::{
     CoefficientCombineRule, Collider, CollisionEvent, ExternalForce, Friction,
     RapierColliderHandle, RapierContext, RapierRigidBodyHandle, Restitution,
@@ -45,25 +46,34 @@ pub enum GameState {
 
 // STARTUP SYSTEMS
 
-pub fn setup_state_independent(mut commands: Commands) {
-    // Insert resource to keep track of score
-    commands.insert_resource(Score(0));
-
-    // Spawn primary camera
-    commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE)
-                .looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        })
-        .insert(PrimaryCamera {});
-}
-
 pub fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    // Scene Camera
+    commands
+        .spawn((
+            Camera3dBundle {
+                camera: Camera {
+                    priority: 10,
+                    ..default()
+                },
+                transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE)
+                    .looking_at(Vec3::ZERO, Vec3::Y),
+                ..default()
+            },
+            AtmosphereCamera::default(),
+        ))
+        .insert(PrimaryCamera {});
+
+    // Skybox
+    commands.insert_resource(AtmosphereModel::new(Gradient {
+        sky: Color::WHITE,
+        horizon: Color::SALMON,
+        ground: Color::ORANGE_RED,
+    }));
+
     // Planet
     commands
         .spawn(PbrBundle {
@@ -287,9 +297,17 @@ pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
 
 // CLEANUP SYSTEMS
 
-// Remove all entities except cameras
-pub fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>) {
+// Remove all entities except cameras plus the primary camera
+pub fn teardown(
+    mut commands: Commands,
+    entities: Query<Entity, Without<Camera>>,
+    primary_camera_query: Query<Entity, With<PrimaryCamera>>,
+) {
     for entity in entities.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+
+    for entity in primary_camera_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
 }
@@ -297,12 +315,4 @@ pub fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>
 // Reset score to 0
 pub fn reset_score(mut score: ResMut<Score>) {
     score.0 = 0;
-}
-
-// Reset primary camera to default transform
-pub fn reset_camera(mut camera_transform_query: Query<&mut Transform, With<PrimaryCamera>>) {
-    if let Some(mut camera_transform) = camera_transform_query.iter_mut().next() {
-        *camera_transform = Transform::from_translation(Vec3::new(0.0, 0.0, CAMERA_DISTANCE))
-            .looking_at(Vec3::ZERO, Vec3::Y);
-    }
 }
