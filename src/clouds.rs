@@ -3,7 +3,7 @@
 use bevy::{
     prelude::{
         default, Assets, Commands, Material, MaterialMeshBundle, Mesh, Name, Res, ResMut,
-        Transform, Vec3,
+        Transform, Vec2, Vec3,
     },
     reflect::TypeUuid,
     render::{
@@ -26,8 +26,8 @@ pub fn setup_clouds(
     mut materials: ResMut<Assets<CloudMaterial>>,
 ) {
     let mut cloud = Mesh::from(Cloud {
-        size: 250.0,
-        num_vertices: 250,
+        size: 256.0,
+        num_vertices: 128,
     });
 
     if let Some(VertexAttributeValues::Float32x3(positions)) =
@@ -35,7 +35,7 @@ pub fn setup_clouds(
     {
         let colors: Vec<[f32; 4]> = positions
             .iter()
-            .map(|[r, g, b]| [(1.0 - *r) / 2.0, (1.0 - *g) / 2.0, (1.0 - *b) / 2.0, 1.0])
+            .map(|[_r, _g, _b]| [1.0, 1.0, 0.2, 1.0])
             .collect();
 
         cloud.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
@@ -48,7 +48,12 @@ pub fn setup_clouds(
                 .with_scale(Vec3::new(8.0, 1.0, 8.0)),
             material: materials.add(CloudMaterial {
                 time: 0.0,
-                amplitude: 50.0,
+                steepness: 0.25,
+                wavelength: 50.0,
+                speed: 10.0,
+                wave_1_dir: Vec2::new(1.0, 1.0),
+                wave_2_dir: Vec2::new(1.0, 0.6),
+                wave_3_dir: Vec2::new(1.0, 1.3),
             }),
             ..default()
         })
@@ -89,7 +94,17 @@ pub struct CloudMaterial {
     #[uniform(0)]
     time: f32,
     #[uniform(1)]
-    amplitude: f32,
+    steepness: f32,
+    #[uniform(2)]
+    wavelength: f32,
+    #[uniform(3)]
+    speed: f32,
+    #[uniform(4)]
+    wave_1_dir: Vec2,
+    #[uniform(5)]
+    wave_2_dir: Vec2,
+    #[uniform(6)]
+    wave_3_dir: Vec2,
 }
 
 #[derive(Debug, Copy, Clone)]

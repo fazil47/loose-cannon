@@ -114,7 +114,7 @@ pub fn setup_scene(
                 ..default()
             },
             transform: Transform {
-                translation: Vec3::new(0.0, 2.0, 0.0),
+                translation: Vec3::new(0.0, PLANET_SIZE, 0.0),
                 rotation: Quat::from_rotation_x(-PI / 2.0),
                 ..default()
             },
@@ -146,7 +146,7 @@ pub fn setup_scene(
                 ..default()
             },
             transform: Transform {
-                translation: Vec3::new(0.0, 0.0, -PLANET_SIZE * 3.0),
+                translation: Vec3::new(0.0, -PLANET_SIZE, 0.0),
                 rotation: Quat::from_rotation_x(PI / 2.0),
                 ..default()
             },

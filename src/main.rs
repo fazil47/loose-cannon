@@ -76,7 +76,7 @@ fn main() {
                 .with_system(shoot_cannon_ball)
                 .with_system(move_camera)
                 .with_system(handle_collisions)
-                // .with_system(spawn_asteroid)
+                .with_system(spawn_asteroid)
                 .with_system(update_clouds)
                 .with_system(update_score_ui)
                 .with_system(construct_skybox),
