@@ -20,11 +20,12 @@ use winit::window::Icon;
 use crate::{asteroid::Asteroid, cannon_ball::CannonBall, player::PlayerCollider};
 
 // CONSTANTS
-pub const SHOW_DEBUG_LINES: bool = false;
 pub const PLANET_SIZE: f32 = 20.0;
 pub const CAMERA_DISTANCE: f32 = 60.0;
+pub const CAMERA_DELAY: f32 = 0.9;
 pub const GRAVITY_MAGNITUDE: f32 = 3.0;
 pub const SCORE_INCREMENT: i32 = 1;
+pub const SHOW_DEBUG_LINES: bool = false;
 
 // COMPONENTS
 
@@ -280,7 +281,7 @@ pub fn move_camera(
     {
         let new_camera_translation = camera_transform
             .translation
-            .lerp(player_translation_scaled, 0.4);
+            .lerp(player_translation_scaled, CAMERA_DELAY);
 
         *camera_transform = Transform::from_translation(new_camera_translation)
             .looking_at(Vec3::ZERO, camera_transform.up());

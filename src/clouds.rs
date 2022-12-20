@@ -45,7 +45,7 @@ pub fn setup_clouds(
         .spawn(MaterialMeshBundle {
             mesh: meshes.add(cloud),
             transform: Transform::from_xyz(0.0, CLOUD_ALTITUDE, 0.0)
-                .with_scale(Vec3::new(8.0, 1.0, 8.0)),
+                .with_scale(Vec3::new(10.0, 1.0, 10.0)),
             material: materials.add(CloudMaterial {
                 time: 0.0,
                 steepness: 0.25,
@@ -53,7 +53,7 @@ pub fn setup_clouds(
                 speed: 10.0,
                 wave_1_dir: Vec2::new(1.0, 1.0),
                 wave_2_dir: Vec2::new(1.0, 0.6),
-                wave_3_dir: Vec2::new(1.0, 1.3),
+                wave_3_dir: Vec2::new(1.3, -0.1),
             }),
             ..default()
         })

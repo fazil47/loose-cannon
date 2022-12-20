@@ -63,11 +63,12 @@ pub fn spawn_asteroid(
         let z = rng.gen_range(-1.0..1.0) * 10.0;
         let position = Vec3::new(x, y, z).normalize() * ASTEROID_SPAWN_ALTITUDE;
 
-        // Apply impulse to asteroid in random direction towards the planet
+        // Apply impulse to asteroid in random direction towards the planet but not directly at it
         let x = rng.gen_range(-1.0..1.0) * 10.0;
         let y = rng.gen_range(-1.0..1.0) * 10.0;
         let z = rng.gen_range(-1.0..1.0) * 10.0;
-        let direction = (Vec3::new(x, y, z) - position.normalize() * 10.0).normalize();
+        let to_planet = position.normalize();
+        let direction = (Vec3::new(x, y, z).cross(to_planet)).normalize();
 
         commands
             .spawn(PbrBundle {
