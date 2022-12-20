@@ -1,8 +1,8 @@
 use bevy::{
     prelude::{
-        AssetServer, BuildChildren, ButtonBundle, Camera3dBundle, Changed, Color, Commands,
+        AssetServer, BuildChildren, ButtonBundle, Camera, Camera3dBundle, Changed, Color, Commands,
         Component, Name, NodeBundle, Query, Res, ResMut, State, TextBundle, Transform, Visibility,
-        With, Camera,
+        With,
     },
     text::{Text, TextStyle},
     ui::{
@@ -12,7 +12,7 @@ use bevy::{
     utils::default,
 };
 
-use crate::common::{GameState, Score};
+use crate::common::{GameState, PrimaryCamera, Score};
 
 // CONSTANTS
 
@@ -98,14 +98,16 @@ pub fn setup_game_over_ui(
     score: Res<Score>,
 ) {
     // Camera for UI
-    commands.spawn((Camera3dBundle {
-        camera: Camera {
-            priority: 5,
+    commands
+        .spawn(Camera3dBundle {
+            camera: Camera {
+                priority: 5,
+                ..default()
+            },
+            transform: Transform::default(),
             ..default()
-        },
-        transform: Transform::default(),
-        ..default()
-    },));
+        })
+        .insert(PrimaryCamera {});
 
     // Game over text and restart button - Game Over UI
     commands

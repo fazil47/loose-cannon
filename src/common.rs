@@ -133,42 +133,10 @@ pub fn setup_scene(
         })
         .insert(Name::new("Sun"));
 
-    // Directional light - reflected sun
-    commands
-        .spawn(DirectionalLightBundle {
-            directional_light: DirectionalLight {
-                color: Color::Rgba {
-                    red: 1.0,
-                    green: 1.0,
-                    blue: 0.5,
-                    alpha: 1.0,
-                },
-                illuminance: 10_000.0,
-                shadow_projection: OrthographicProjection {
-                    left: -2.0 * PLANET_SIZE,
-                    right: 2.0 * PLANET_SIZE,
-                    bottom: -2.0 * PLANET_SIZE,
-                    top: 2.0 * PLANET_SIZE,
-                    near: -10.0 * PLANET_SIZE,
-                    far: 10.0 * PLANET_SIZE,
-                    ..default()
-                },
-                shadows_enabled: true,
-                ..default()
-            },
-            transform: Transform {
-                translation: Vec3::new(0.0, -PLANET_SIZE, 0.0),
-                rotation: Quat::from_rotation_x(PI / 2.0),
-                ..default()
-            },
-            ..default()
-        })
-        .insert(Name::new("Reflected Sun"));
-
     // Ambient light
     commands.insert_resource(AmbientLight {
         color: Color::rgb(1.0, 1.0, 0.8),
-        brightness: 0.4,
+        brightness: 3.0,
     });
 }
 
@@ -298,7 +266,7 @@ pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
 
 // CLEANUP SYSTEMS
 
-// Remove all entities except cameras plus the primary camera
+// Remove all entities except non primary cameras
 pub fn teardown(
     mut commands: Commands,
     entities: Query<Entity, Without<Camera>>,
