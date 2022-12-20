@@ -2,8 +2,8 @@
 
 use bevy::{
     prelude::{
-        default, Assets, Commands, Material, MaterialMeshBundle, Mesh, Name, Res, ResMut,
-        Transform, Vec2, Vec3,
+        default, AlphaMode, Assets, Commands, Material, MaterialMeshBundle, Mesh, Name, Res,
+        ResMut, Transform, Vec2, Vec3,
     },
     reflect::TypeUuid,
     render::{
@@ -54,6 +54,7 @@ pub fn setup_clouds(
                 wave_1_dir: Vec2::new(1.0, 1.0),
                 wave_2_dir: Vec2::new(1.0, 0.6),
                 wave_3_dir: Vec2::new(1.3, -0.1),
+                alpha_mode: AlphaMode::Blend,
             }),
             ..default()
         })
@@ -70,7 +71,6 @@ pub fn update_clouds(time: Res<Time>, mut materials: ResMut<Assets<CloudMaterial
 
 // MATERIALS
 
-/// From https://github.com/rust-adventure/bevy-examples/tree/main/examples/spacecraft-noiseland
 /// The Material trait is very configurable, but comes with sensible defaults for all methods.
 /// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
 impl Material for CloudMaterial {
@@ -82,9 +82,9 @@ impl Material for CloudMaterial {
         "shaders/cloud_vertex.wgsl".into()
     }
 
-    // fn alpha_mode(&self) -> AlphaMode {
-    //     self.alpha_mode
-    // }
+    fn alpha_mode(&self) -> AlphaMode {
+        self.alpha_mode
+    }
 }
 
 // This is the struct that will be passed to your shader
@@ -105,6 +105,7 @@ pub struct CloudMaterial {
     wave_2_dir: Vec2,
     #[uniform(6)]
     wave_3_dir: Vec2,
+    alpha_mode: AlphaMode,
 }
 
 #[derive(Debug, Copy, Clone)]

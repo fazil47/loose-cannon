@@ -121,7 +121,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     var light = (dot(normal, vertex.normal) + 2.0) / 2.0;
 
 #ifdef VERTEX_COLORS
-    out.color = vertex.color * (vec4<f32>(light, light, light, 1.0));
+    out.color = vertex.color * (vec4<f32>(light, light, light, light));
 #endif
 
 #ifdef VERTEX_TANGENTS
