@@ -26,8 +26,8 @@ pub fn setup_clouds(
     mut materials: ResMut<Assets<CloudMaterial>>,
 ) {
     let mut cloud = Mesh::from(Cloud {
-        size: 256.0,
-        num_vertices: 128,
+        size: 320.0,
+        num_vertices: 64,
     });
 
     if let Some(VertexAttributeValues::Float32x3(positions)) =
