@@ -17,7 +17,7 @@ use image;
 use std::f32::consts::PI;
 use winit::window::Icon;
 
-use crate::{asteroid::Asteroid, cannon_ball::CannonBall, player::PlayerCollider};
+use crate::{asteroids::Asteroid, cannon_ball::CannonBall, player::PlayerCollider};
 
 // CONSTANTS
 pub const PLANET_SIZE: f32 = 20.0;

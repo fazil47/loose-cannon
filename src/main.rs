@@ -12,7 +12,7 @@ use bevy_rapier3d::{
 };
 
 use loose_cannon::{
-    asteroid::{setup_asteroid, spawn_asteroid},
+    asteroids::{setup_asteroids, spawn_asteroids},
     cannon_ball::shoot_cannon_ball,
     clouds::{setup_clouds, update_clouds, CloudMaterial},
     common::{
@@ -58,9 +58,8 @@ fn main() {
             SystemSet::on_enter(GameState::Playing)
                 .with_system(setup_scene)
                 .with_system(setup_player)
-                // .with_system(setup_cubemap)
                 .with_system(setup_player_input)
-                .with_system(setup_asteroid)
+                .with_system(setup_asteroids)
                 .with_system(setup_clouds)
                 .with_system(setup_game_ui)
                 .with_system(reset_rapier),
@@ -74,9 +73,9 @@ fn main() {
                 .with_system(shoot_cannon_ball)
                 .with_system(move_camera)
                 .with_system(handle_collisions)
-                .with_system(spawn_asteroid)
+                .with_system(spawn_asteroids)
                 .with_system(update_clouds)
-                .with_system(update_score_ui), // .with_system(construct_cubemap),
+                .with_system(update_score_ui),
         )
         .add_system_set(SystemSet::on_exit(GameState::Playing).with_system(teardown))
         .add_system_set(SystemSet::on_enter(GameState::GameOver).with_system(setup_game_over_ui))

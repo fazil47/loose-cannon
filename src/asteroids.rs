@@ -35,7 +35,7 @@ pub struct AsteroidSpawnTimer(pub Timer);
 
 // STARTUP SYSTEMS
 
-pub fn setup_asteroid(mut commands: Commands) {
+pub fn setup_asteroids(mut commands: Commands) {
     // Insert resouce to keep track of time until the next asteroid is spawned
     commands.insert_resource(AsteroidSpawnTimer(Timer::from_seconds(
         ASTEROID_SPAWN_DELAY,
@@ -45,7 +45,7 @@ pub fn setup_asteroid(mut commands: Commands) {
 
 // SYSTEMS
 
-pub fn spawn_asteroid(
+pub fn spawn_asteroids(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,

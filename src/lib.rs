@@ -1,4 +1,4 @@
-pub mod asteroid;
+pub mod asteroids;
 pub mod cannon_ball;
 pub mod clouds;
 pub mod common;
