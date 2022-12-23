@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{default, App, AssetPlugin, MaterialPlugin, PluginGroup, SystemSet},
+    prelude::{default, App, AssetPlugin, ImagePlugin, MaterialPlugin, PluginGroup, SystemSet},
     window::{WindowDescriptor, WindowPlugin},
     DefaultPlugins,
 };
@@ -23,6 +23,7 @@ use loose_cannon::{
     player::{apply_player_collider_impulse, set_player_mesh_transform, setup_player},
     ui::{restart_button_system, setup_game_over_ui, setup_game_ui, update_score_ui},
 };
+use wgpu::{AddressMode, SamplerDescriptor};
 
 // TODO: add grass to planet
 // TODO: cannon ball shooting sfx
@@ -44,6 +45,14 @@ fn main() {
                 .set(AssetPlugin {
                     watch_for_changes: true,
                     ..default()
+                })
+                .set(ImagePlugin {
+                    default_sampler: SamplerDescriptor {
+                        address_mode_u: AddressMode::Repeat,
+                        address_mode_v: AddressMode::Repeat,
+                        address_mode_w: AddressMode::Repeat,
+                        ..Default::default()
+                    },
                 }),
         )
         .add_plugin(MaterialPlugin::<CloudMaterial>::default())

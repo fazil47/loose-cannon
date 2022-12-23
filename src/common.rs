@@ -1,9 +1,9 @@
 use bevy::{
     prelude::{
-        default, shape, AmbientLight, Assets, Camera, Camera3dBundle, Color, Commands, Component,
-        DespawnRecursiveExt, DirectionalLight, DirectionalLightBundle, Entity, EventReader, Mesh,
-        Name, NonSend, OrthographicProjection, PbrBundle, Quat, Query, ResMut, Resource,
-        StandardMaterial, State, Transform, Vec3, With, Without,
+        default, shape, AmbientLight, AssetServer, Assets, Camera, Camera3dBundle, Color, Commands,
+        Component, DespawnRecursiveExt, DirectionalLight, DirectionalLightBundle, Entity,
+        EventReader, Mesh, Name, NonSend, OrthographicProjection, PbrBundle, Quat, Query, Res,
+        ResMut, Resource, StandardMaterial, State, Transform, Vec3, With, Without,
     },
     window::WindowId,
     winit::WinitWindows,
@@ -49,6 +49,7 @@ pub enum GameState {
 
 pub fn setup_scene(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -78,12 +79,22 @@ pub fn setup_scene(
     // Planet
     commands
         .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Icosphere {
+            mesh: meshes.add(Mesh::from(shape::UVSphere {
                 radius: PLANET_SIZE,
-                subdivisions: 32,
+                sectors: 32,
+                stacks: 32,
             })),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgb(0.3, 0.5, 0.3),
+                // base_color: Color::rgb(0.3, 0.5, 0.3),
+                base_color_texture: asset_server
+                    .load("textures/planet/DirtRug_diffuse.png")
+                    .into(),
+                normal_map_texture: asset_server
+                    .load("textures/planet/DirtRug_normal.png")
+                    .into(),
+                metallic_roughness_texture: asset_server
+                    .load("textures/planet/DirtRug_metallic_roughness.png")
+                    .into(),
                 perceptual_roughness: 0.8,
                 metallic: 0.4,
                 ..default()

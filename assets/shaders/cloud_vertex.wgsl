@@ -125,7 +125,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 #endif
 
 #ifdef VERTEX_TANGENTS
-    out.world_tangent = mesh_tangent_local_to_world(model, tangent);
+    out.world_tangent = mesh_tangent_local_to_world(model, vec4<f32>(tangent, 1.0));
 #endif
 
 #ifdef VERTEX_UVS
