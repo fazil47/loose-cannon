@@ -5,7 +5,7 @@ use bevy::{
         EventReader, Mesh, Name, NextState, NonSend, PbrBundle, Quat, Query, Res, ResMut, Resource,
         StandardMaterial, States, Transform, Vec3, With, Without,
     },
-    window::PrimaryWindow,
+    window::{PrimaryWindow, Window},
     winit::WinitWindows,
 };
 // use bevy_atmosphere::prelude::{AtmosphereCamera, AtmosphereModel, Gradient};
@@ -272,7 +272,7 @@ pub fn gravity(mut query: Query<(&Transform, &mut ExternalForce)>) {
 // Remove all entities except non primary cameras
 pub fn teardown(
     mut commands: Commands,
-    entities: Query<Entity, Without<Camera>>,
+    entities: Query<Entity, (Without<Camera>, Without<Window>)>,
     primary_camera_query: Query<Entity, With<PrimaryCamera>>,
 ) {
     for entity in entities.iter() {
