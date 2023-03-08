@@ -1,11 +1,12 @@
 use bevy::{
     prelude::{
         Camera, Commands, EventWriter, GlobalTransform, Input, MouseButton, Query, Res, ResMut,
-        Resource, Time, Timer, Transform, Vec2, Vec3, Visibility, Window, Windows, With,
+        Resource, Time, Timer, Transform, Vec2, Vec3, Visibility, Window, With,
     },
     time::TimerMode,
+    window::PrimaryWindow,
 };
-use bevy_prototype_debug_lines::DebugLines;
+// use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
 
 use crate::{
@@ -56,15 +57,15 @@ pub fn handle_player_input(
     mut shoot_timer: ResMut<ShootTimer>,
     time: Res<Time>,
     rapier_context: Res<RapierContext>,
-    mut lines: ResMut<DebugLines>,
+    // mut lines: ResMut<DebugLines>,
     buttons: Res<Input<MouseButton>>,
-    windows: Res<Windows>,
     mut ev_shoot: EventWriter<ShootEvent>,
+    primary_window_query: Query<&Window, With<PrimaryWindow>>,
     camera_query: Query<(&GlobalTransform, &Camera), With<PrimaryCamera>>,
     player_collider_query: Query<&Transform, With<PlayerCollider>>,
     mut reload_ui_query: Query<&mut Visibility, With<ReloadUI>>,
 ) {
-    let window: &Window = windows.get_primary().unwrap();
+    let window: &Window = primary_window_query.single();
     let (camera_transform, camera) = camera_query.single();
     let player_collider_transform = player_collider_query.single();
     let mut reload_ui_visibility = reload_ui_query.single_mut();
@@ -103,17 +104,17 @@ pub fn handle_player_input(
                 // the player can shoot only after the timer is up
                 if !shoot_timer.0.tick(time.delta()).finished() {
                     // Show reload UI
-                    reload_ui_visibility.is_visible = true;
+                    *reload_ui_visibility = Visibility::Visible;
                     return;
                 }
 
                 // Hide the reload UI
-                reload_ui_visibility.is_visible = false;
+                *reload_ui_visibility = Visibility::Hidden;
 
                 // If the left mouse button is pressed, apply an impulse in the direction of the tangent
                 if buttons.just_pressed(MouseButton::Left) {
                     if SHOW_DEBUG_LINES {
-                        lines.line(ray.origin, hit_point, 20.0);
+                        // lines.line(ray.origin, hit_point, 20.0);
                     }
 
                     shoot_timer.0.reset();

@@ -2,13 +2,13 @@ use bevy::{
     prelude::{
         default, shape, AmbientLight, AssetServer, Assets, Camera, Camera3dBundle, Color, Commands,
         Component, DespawnRecursiveExt, DirectionalLight, DirectionalLightBundle, Entity,
-        EventReader, Mesh, Name, NonSend, OrthographicProjection, PbrBundle, Quat, Query, Res,
-        ResMut, Resource, StandardMaterial, State, Transform, Vec3, With, Without,
+        EventReader, Mesh, Name, NextState, NonSend, PbrBundle, Quat, Query, Res, ResMut, Resource,
+        StandardMaterial, States, Transform, Vec3, With, Without,
     },
-    window::WindowId,
+    window::PrimaryWindow,
     winit::WinitWindows,
 };
-use bevy_atmosphere::prelude::{AtmosphereCamera, AtmosphereModel, Gradient};
+// use bevy_atmosphere::prelude::{AtmosphereCamera, AtmosphereModel, Gradient};
 use bevy_rapier3d::prelude::{
     CoefficientCombineRule, Collider, CollisionEvent, ExternalForce, Friction,
     RapierColliderHandle, RapierContext, RapierRigidBodyHandle, Restitution,
@@ -38,13 +38,12 @@ pub struct PrimaryCamera {}
 pub struct Score(pub i32);
 
 // STATES
-
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(States, Clone, PartialEq, Eq, Debug, Hash, Default)]
 pub enum GameState {
+    #[default]
     Playing,
     GameOver,
 }
-
 // STARTUP SYSTEMS
 
 pub fn setup_scene(
@@ -58,23 +57,23 @@ pub fn setup_scene(
         .spawn((
             Camera3dBundle {
                 camera: Camera {
-                    priority: 10,
+                    order: 10,
                     ..default()
                 },
                 transform: Transform::from_xyz(0.0, 0.0, CAMERA_DISTANCE)
                     .looking_at(Vec3::ZERO, Vec3::Y),
                 ..default()
             },
-            AtmosphereCamera::default(),
+            // AtmosphereCamera::default(),
         ))
         .insert(PrimaryCamera {});
 
     // Skybox
-    commands.insert_resource(AtmosphereModel::new(Gradient {
-        sky: Color::WHITE,
-        horizon: Color::SALMON,
-        ground: Color::ORANGE_RED,
-    }));
+    // commands.insert_resource(AtmosphereModel::new(Gradient {
+    //     sky: Color::WHITE,
+    //     horizon: Color::SALMON,
+    //     ground: Color::ORANGE_RED,
+    // }));
 
     // Planet
     commands
@@ -123,15 +122,6 @@ pub fn setup_scene(
                     alpha: 1.0,
                 },
                 illuminance: 100_000.0,
-                shadow_projection: OrthographicProjection {
-                    left: -2.0 * PLANET_SIZE,
-                    right: 2.0 * PLANET_SIZE,
-                    bottom: -2.0 * PLANET_SIZE,
-                    top: 2.0 * PLANET_SIZE,
-                    near: -10.0 * PLANET_SIZE,
-                    far: 10.0 * PLANET_SIZE,
-                    ..default()
-                },
                 shadows_enabled: true,
                 ..default()
             },
@@ -180,8 +170,12 @@ pub fn reset_rapier(
     rapier.query_pipeline = context.query_pipeline;
 }
 
-pub fn setup_window(windows: NonSend<WinitWindows>) {
-    let primary = windows.get_window(WindowId::primary()).unwrap();
+pub fn setup_window(
+    windows: NonSend<WinitWindows>,
+    primary_window_query: Query<Entity, With<PrimaryWindow>>,
+) {
+    let primary_window_entity = primary_window_query.single();
+    let primary_window = windows.get_window(primary_window_entity).unwrap();
 
     // here we use the `image` crate to load our icon data from a png file
     // this is not a very bevy-native solution, but it will do
@@ -196,7 +190,7 @@ pub fn setup_window(windows: NonSend<WinitWindows>) {
 
     let icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
 
-    primary.set_window_icon(Some(icon));
+    primary_window.set_window_icon(Some(icon));
 }
 
 // SYSTEMS
@@ -204,7 +198,7 @@ pub fn setup_window(windows: NonSend<WinitWindows>) {
 // System to handle collision events
 pub fn handle_collisions(
     mut commands: Commands,
-    mut game_state: ResMut<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
     mut score: ResMut<Score>,
     mut ev_collision: EventReader<CollisionEvent>,
     player_collider_query: Query<Entity, With<PlayerCollider>>,
@@ -217,9 +211,7 @@ pub fn handle_collisions(
             if player_collider_query.get(*collider).is_ok()
                 || player_collider_query.get(*other_collider).is_ok()
             {
-                if let Err(error) = game_state.overwrite_replace(GameState::GameOver) {
-                    println!("Error setting game state to GameOver: {}", error);
-                }
+                next_state.set(GameState::GameOver);
             } else if cannon_ball_query.get(*collider).is_ok() {
                 if asteroid_query.get(*other_collider).is_ok() {
                     score.0 += SCORE_INCREMENT;

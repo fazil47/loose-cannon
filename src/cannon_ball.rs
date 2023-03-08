@@ -30,10 +30,14 @@ pub fn shoot_cannon_ball(
     for ev in ev_shoot.iter() {
         commands
             .spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: PLAYER_SIZE / 2.0,
-                    subdivisions: 16,
-                })),
+                mesh: meshes.add(
+                    shape::Icosphere {
+                        radius: PLAYER_SIZE / 2.0,
+                        subdivisions: 16,
+                    }
+                    .try_into()
+                    .unwrap(),
+                ),
                 material: materials.add(StandardMaterial {
                     base_color: Color::rgb(0.3, 0.3, 0.3),
                     perceptual_roughness: 0.3,

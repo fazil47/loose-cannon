@@ -1,8 +1,8 @@
 use bevy::{
     prelude::{
         AssetServer, BuildChildren, ButtonBundle, Camera, Camera3dBundle, Changed, Color, Commands,
-        Component, Name, NodeBundle, Query, Res, ResMut, State, TextBundle, Transform, Visibility,
-        With,
+        Component, Name, NextState, NodeBundle, Query, Res, ResMut, TextBundle, Transform,
+        Visibility, With,
     },
     text::{Text, TextStyle},
     ui::{
@@ -88,7 +88,7 @@ pub fn setup_game_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 )
                 .insert(Name::new("Reload_Indicator"))
                 .insert(ReloadUI {})
-                .insert(Visibility::INVISIBLE);
+                .insert(Visibility::Hidden);
         });
 }
 
@@ -101,7 +101,7 @@ pub fn setup_game_over_ui(
     commands
         .spawn(Camera3dBundle {
             camera: Camera {
-                priority: 5,
+                order: 5,
                 ..default()
             },
             transform: Transform::default(),
@@ -198,7 +198,7 @@ pub fn update_score_ui(score: Res<Score>, mut score_ui_query: Query<&mut Text, W
 
 // This system runs only when state is set to GameOver
 pub fn restart_button_system(
-    mut game_state: ResMut<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<RestartButton>),
@@ -214,7 +214,7 @@ pub fn restart_button_system(
             }
             Interaction::Clicked => {
                 *color = PRESSED_BUTTON.into();
-                game_state.overwrite_replace(GameState::Playing).unwrap();
+                next_state.set(GameState::Playing);
             }
         }
     }

@@ -72,10 +72,14 @@ pub fn spawn_asteroids(
 
         commands
             .spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: ASTEROID_SIZE / 2.0,
-                    subdivisions: 16,
-                })),
+                mesh: meshes.add(
+                    shape::Icosphere {
+                        radius: ASTEROID_SIZE / 2.0,
+                        subdivisions: 16,
+                    }
+                    .try_into()
+                    .unwrap(),
+                ),
                 material: materials.add(StandardMaterial {
                     base_color_texture: asset_server
                         .load("textures/asteroid/asteroid_base.png")
