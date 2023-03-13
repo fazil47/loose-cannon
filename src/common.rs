@@ -8,7 +8,7 @@ use bevy::{
     window::{PrimaryWindow, Window},
     winit::WinitWindows,
 };
-// use bevy_atmosphere::prelude::{AtmosphereCamera, AtmosphereModel, Gradient};
+use bevy_atmosphere::prelude::{AtmosphereCamera, AtmosphereModel, Gradient};
 use bevy_rapier3d::prelude::{
     CoefficientCombineRule, Collider, CollisionEvent, ExternalForce, Friction,
     RapierColliderHandle, RapierContext, RapierRigidBodyHandle, Restitution,
@@ -64,16 +64,16 @@ pub fn setup_scene(
                     .looking_at(Vec3::ZERO, Vec3::Y),
                 ..default()
             },
-            // AtmosphereCamera::default(),
+            AtmosphereCamera::default(),
         ))
         .insert(PrimaryCamera {});
 
     // Skybox
-    // commands.insert_resource(AtmosphereModel::new(Gradient {
-    //     sky: Color::WHITE,
-    //     horizon: Color::SALMON,
-    //     ground: Color::ORANGE_RED,
-    // }));
+    commands.insert_resource(AtmosphereModel::new(Gradient {
+        sky: Color::WHITE,
+        horizon: Color::SALMON,
+        ground: Color::ORANGE_RED,
+    }));
 
     // Planet
     commands
@@ -137,7 +137,7 @@ pub fn setup_scene(
     // Ambient light
     commands.insert_resource(AmbientLight {
         color: Color::rgb(1.0, 1.0, 0.8),
-        brightness: 3.0,
+        brightness: 2.0,
     });
 }
 

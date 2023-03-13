@@ -6,7 +6,7 @@ use bevy::{
     time::TimerMode,
     window::PrimaryWindow,
 };
-// use bevy_prototype_debug_lines::DebugLines;
+use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
 
 use crate::{
@@ -57,7 +57,7 @@ pub fn handle_player_input(
     mut shoot_timer: ResMut<ShootTimer>,
     time: Res<Time>,
     rapier_context: Res<RapierContext>,
-    // mut lines: ResMut<DebugLines>,
+    mut lines: ResMut<DebugLines>,
     buttons: Res<Input<MouseButton>>,
     mut ev_shoot: EventWriter<ShootEvent>,
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
@@ -114,7 +114,7 @@ pub fn handle_player_input(
                 // If the left mouse button is pressed, apply an impulse in the direction of the tangent
                 if buttons.just_pressed(MouseButton::Left) {
                     if SHOW_DEBUG_LINES {
-                        // lines.line(ray.origin, hit_point, 20.0);
+                        lines.line(ray.origin, hit_point, 20.0);
                     }
 
                     shoot_timer.0.reset();

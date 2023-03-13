@@ -7,21 +7,22 @@ use bevy::{
     window::{Window, WindowPlugin},
     DefaultPlugins,
 };
-// use bevy_atmosphere::prelude::AtmospherePlugin;
-// use bevy_editor_pls::prelude::EditorPlugin;
-// use bevy_prototype_debug_lines::DebugLinesPlugin;
-use bevy_rapier3d::{
-    prelude::{NoUserData, RapierPhysicsPlugin},
-    render::RapierDebugRenderPlugin,
-};
+use bevy_atmosphere::prelude::AtmospherePlugin;
+use bevy_prototype_debug_lines::DebugLinesPlugin;
+use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
+
+#[cfg(debug_assertions)]
+use bevy_editor_pls::prelude::EditorPlugin;
+#[cfg(debug_assertions)]
+use bevy_rapier3d::render::RapierDebugRenderPlugin;
 
 use loose_cannon::{
     asteroids::{setup_asteroids, spawn_asteroids},
     cannon_ball::shoot_cannon_ball,
     clouds::{setup_clouds, update_clouds, CloudMaterial},
     common::{
-        gravity, handle_collisions, move_camera, reset_rapier, reset_score, setup_scene,
-        setup_window, teardown, GameState, Score,
+        gravity, handle_collisions, move_camera, reset_score, setup_scene, setup_window, teardown,
+        GameState, Score,
     },
     input::{handle_player_input, setup_player_input, ShootEvent},
     player::{apply_player_collider_impulse, set_player_mesh_transform, setup_player},
@@ -64,12 +65,13 @@ fn main() {
 
     // Third-party plugins
     app.add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default());
+        .add_plugin(AtmospherePlugin)
+        .add_plugin(DebugLinesPlugin::with_depth_test(true));
 
-    // Plugins that haven't been ported to Bevy 0.10
-    // app.add_plugin(AtmospherePlugin)
-    //     .add_plugin(EditorPlugin)
-    //     .add_plugin(DebugLinesPlugin::with_depth_test(true));
+    // Third-party debug plugins
+    #[cfg(debug_assertions)]
+    app.add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(EditorPlugin);
 
     // Custom materials
     app.add_plugin(MaterialPlugin::<CloudMaterial>::default());
@@ -95,7 +97,6 @@ fn main() {
             setup_asteroids,
             setup_clouds,
             setup_game_ui,
-            reset_rapier,
         )
             .chain()
             .in_schedule(OnEnter(GameState::Playing)),
