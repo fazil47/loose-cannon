@@ -65,6 +65,11 @@ pub fn handle_player_input(
     player_collider_query: Query<&Transform, With<PlayerCollider>>,
     mut reload_ui_query: Query<&mut Visibility, With<ReloadUI>>,
 ) {
+    // If there is no primary window, do nothing
+    if primary_window_query.is_empty() {
+        return;
+    }
+
     let window: &Window = primary_window_query.single();
     let (camera_transform, camera) = camera_query.single();
     let player_collider_transform = player_collider_query.single();

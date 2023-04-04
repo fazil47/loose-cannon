@@ -1,15 +1,14 @@
 use bevy::{
     prelude::{
         default, App, AssetPlugin, ImagePlugin, IntoSystemAppConfig, IntoSystemAppConfigs,
-        IntoSystemConfig, IntoSystemConfigs, MaterialPlugin, OnEnter, OnExit, OnUpdate,
-        PluginGroup,
+        IntoSystemConfig, IntoSystemConfigs, OnEnter, OnExit, OnUpdate, PluginGroup,
     },
     window::{Window, WindowPlugin},
     DefaultPlugins,
 };
-use bevy_atmosphere::prelude::AtmospherePlugin;
 use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
+use bevy_starfield::{GameUnitsToCelestial, StarfieldPlugin};
 
 #[cfg(debug_assertions)]
 use bevy_editor_pls::prelude::EditorPlugin;
@@ -19,7 +18,6 @@ use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use loose_cannon::{
     asteroids::{setup_asteroids, spawn_asteroids},
     cannon_ball::shoot_cannon_ball,
-    clouds::{setup_clouds, update_clouds, CloudMaterial},
     common::{
         gravity, handle_collisions, move_camera, reset_score, setup_scene, setup_window, teardown,
         GameState, Score,
@@ -65,22 +63,28 @@ fn main() {
 
     // Third-party plugins
     app.add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(AtmospherePlugin)
+        // .add_plugin(AtmospherePlugin)
+        .add_plugin(StarfieldPlugin)
         .add_plugin(DebugLinesPlugin::with_depth_test(true));
 
     // Third-party debug plugins
     #[cfg(debug_assertions)]
     app.add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(EditorPlugin);
+        .add_plugin(EditorPlugin::new().in_new_window(Window::default()));
 
-    // Custom materials
-    app.add_plugin(MaterialPlugin::<CloudMaterial>::default());
+    // // Custom materials
+    // app.add_plugin(MaterialPlugin::<CloudMaterial>::default());
 
     // Events
     app.add_event::<ShootEvent>();
 
     // Resources
-    app.insert_resource(Score(0));
+    app.insert_resource(Score(0))
+        .insert_resource(GameUnitsToCelestial {
+            origin_latitude: 51.4778,
+            origin_longitude: -0.0014,
+            ..Default::default()
+        });
 
     // State
     app.add_state::<GameState>();
@@ -95,7 +99,6 @@ fn main() {
             setup_player,
             setup_player_input,
             setup_asteroids,
-            setup_clouds,
             setup_game_ui,
         )
             .chain()
@@ -111,7 +114,6 @@ fn main() {
             move_camera,
             handle_collisions,
             spawn_asteroids,
-            update_clouds,
             update_score_ui,
         )
             .chain()

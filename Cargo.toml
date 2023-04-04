@@ -6,16 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.10" }
+bevy = { version = "0.10.1" }
 bevy_rapier3d = "0.21.0"
 image = "0.24.5"
 itertools = "0.10.5"
 rand = "0.8.5"
 winit = "0.28"
 wgpu = "0.15.0"
-bevy_atmosphere = "0.6.0"
-bevy_editor_pls = "0.3.0"
+bevy_editor_pls = "0.4.0"
 bevy_prototype_debug_lines = "0.10.1"
+bevy_starfield = "0.1.1"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
