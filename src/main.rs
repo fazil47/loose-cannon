@@ -64,13 +64,15 @@ fn main() {
     // Third-party plugins
     app.add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         // .add_plugin(AtmospherePlugin)
-        .add_plugin(StarfieldPlugin)
-        .add_plugin(DebugLinesPlugin::with_depth_test(true));
+        // .add_plugin(StarfieldPlugin)
+        // .add_plugin(DebugLinesPlugin::with_depth_test(true))
+        ;
 
     // Third-party debug plugins
     #[cfg(debug_assertions)]
     app.add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(EditorPlugin::new().in_new_window(Window::default()));
+        // .add_plugin(EditorPlugin::new().in_new_window(Window::default()))
+        ;
 
     // // Custom materials
     // app.add_plugin(MaterialPlugin::<CloudMaterial>::default());
