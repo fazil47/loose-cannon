@@ -194,7 +194,7 @@ pub fn handle_collisions(
     cannon_ball_query: Query<Entity, With<CannonBall>>,
     asteroid_query: Query<Entity, With<Asteroid>>,
 ) {
-    for collsion_event in ev_collision.iter() {
+    for collsion_event in ev_collision.read() {
         // Check only when collision has started
         if let CollisionEvent::Started(collider, other_collider, _) = collsion_event {
             if player_collider_query.get(*collider).is_ok()

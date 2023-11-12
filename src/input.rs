@@ -1,12 +1,12 @@
 use bevy::{
     prelude::{
-        Camera, Commands, EventWriter, GlobalTransform, Input, MouseButton, Query, Res, ResMut,
-        Resource, Time, Timer, Transform, Vec2, Vec3, Visibility, Window, With,
+        Camera, Commands, Event, EventWriter, GlobalTransform, Input, MouseButton, Query, Res,
+        ResMut, Resource, Time, Timer, Transform, Vec2, Vec3, Visibility, Window, With,
     },
     time::TimerMode,
     window::PrimaryWindow,
 };
-use bevy_prototype_debug_lines::DebugLines;
+// use bevy_prototype_debug_lines::DebugLines;
 use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
 
 use crate::{
@@ -28,6 +28,7 @@ pub struct ShootTimer(pub Timer);
 
 // EVENTS
 
+#[derive(Event)]
 pub struct ShootEvent {
     pub position: Vec3,
     pub direction: Vec3,
@@ -57,7 +58,7 @@ pub fn handle_player_input(
     mut shoot_timer: ResMut<ShootTimer>,
     time: Res<Time>,
     rapier_context: Res<RapierContext>,
-    mut lines: ResMut<DebugLines>,
+    // mut lines: ResMut<DebugLines>,
     buttons: Res<Input<MouseButton>>,
     mut ev_shoot: EventWriter<ShootEvent>,
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
@@ -119,7 +120,7 @@ pub fn handle_player_input(
                 // If the left mouse button is pressed, apply an impulse in the direction of the tangent
                 if buttons.just_pressed(MouseButton::Left) {
                     if SHOW_DEBUG_LINES {
-                        lines.line(ray.origin, hit_point, 20.0);
+                        // lines.line(ray.origin, hit_point, 20.0);
                     }
 
                     shoot_timer.0.reset();

@@ -1,14 +1,13 @@
 use bevy::{
     prelude::{
-        default, App, AssetPlugin, ImagePlugin, IntoSystemAppConfig, IntoSystemAppConfigs,
-        IntoSystemConfig, IntoSystemConfigs, OnEnter, OnExit, OnUpdate, PluginGroup,
+        default, in_state, App, IntoSystemConfigs, OnEnter, OnExit, PluginGroup, Startup, Update,
     },
     window::{Window, WindowPlugin},
     DefaultPlugins,
 };
-use bevy_prototype_debug_lines::DebugLinesPlugin;
+// use bevy_prototype_debug_lines::DebugLinesPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
-use bevy_starfield::{GameUnitsToCelestial, StarfieldPlugin};
+// use bevy_starfield::{GameUnitsToCelestial, StarfieldPlugin};
 
 #[cfg(debug_assertions)]
 use bevy_editor_pls::prelude::EditorPlugin;
@@ -26,7 +25,6 @@ use loose_cannon::{
     player::{apply_player_collider_impulse, set_player_mesh_transform, setup_player},
     ui::{restart_button_system, setup_game_over_ui, setup_game_ui, update_score_ui},
 };
-use wgpu::{AddressMode, SamplerDescriptor};
 
 // TODO: add grass to planet
 // TODO: cannon ball shooting sfx
@@ -38,31 +36,16 @@ fn main() {
     let mut app = App::new();
 
     // Default plugins
-    app.add_plugins(
-        DefaultPlugins
-            .set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Loose Cannon".to_string(),
-                    ..default()
-                }),
-                ..default()
-            })
-            .set(AssetPlugin {
-                watch_for_changes: true,
-                ..default()
-            })
-            .set(ImagePlugin {
-                default_sampler: SamplerDescriptor {
-                    address_mode_u: AddressMode::Repeat,
-                    address_mode_v: AddressMode::Repeat,
-                    address_mode_w: AddressMode::Repeat,
-                    ..Default::default()
-                },
-            }),
-    );
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: "Loose Cannon".to_string(),
+            ..default()
+        }),
+        ..default()
+    }));
 
     // Third-party plugins
-    app.add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         // .add_plugin(AtmospherePlugin)
         // .add_plugin(StarfieldPlugin)
         // .add_plugin(DebugLinesPlugin::with_depth_test(true))
@@ -70,9 +53,10 @@ fn main() {
 
     // Third-party debug plugins
     #[cfg(debug_assertions)]
-    app.add_plugin(RapierDebugRenderPlugin::default())
-        // .add_plugin(EditorPlugin::new().in_new_window(Window::default()))
-        ;
+    app.add_plugins((
+        RapierDebugRenderPlugin::default(),
+        EditorPlugin::new().in_new_window(Window::default()),
+    ));
 
     // // Custom materials
     // app.add_plugin(MaterialPlugin::<CloudMaterial>::default());
@@ -81,21 +65,17 @@ fn main() {
     app.add_event::<ShootEvent>();
 
     // Resources
-    app.insert_resource(Score(0))
-        .insert_resource(GameUnitsToCelestial {
-            origin_latitude: 51.4778,
-            origin_longitude: -0.0014,
-            ..Default::default()
-        });
+    app.insert_resource(Score(0));
 
     // State
     app.add_state::<GameState>();
 
     // Startup systems
-    app.add_startup_system(setup_window);
+    app.add_systems(Startup, setup_window);
 
     // GameState::Playing systems
     app.add_systems(
+        OnEnter(GameState::Playing),
         (
             setup_scene,
             setup_player,
@@ -103,10 +83,10 @@ fn main() {
             setup_asteroids,
             setup_game_ui,
         )
-            .chain()
-            .in_schedule(OnEnter(GameState::Playing)),
+            .chain(),
     )
     .add_systems(
+        Update,
         (
             gravity,
             handle_player_input,
@@ -119,21 +99,20 @@ fn main() {
             update_score_ui,
         )
             .chain()
-            .in_set(OnUpdate(GameState::Playing)),
+            .run_if(in_state(GameState::Playing)),
     )
-    .add_system(teardown.in_schedule(OnExit(GameState::Playing)));
+    .add_systems(OnExit(GameState::Playing), teardown);
 
     // GameState::GameOver systems
-    app.add_system(setup_game_over_ui.in_schedule(OnEnter(GameState::GameOver)))
-        .add_system(restart_button_system.in_set(OnUpdate(GameState::GameOver)))
+    app.add_systems(OnEnter(GameState::GameOver), setup_game_over_ui)
         .add_systems(
-            (teardown, reset_score)
-                .chain()
-                .in_schedule(OnExit(GameState::GameOver)),
-        );
+            Update,
+            (restart_button_system).run_if(in_state(GameState::GameOver)),
+        )
+        .add_systems(OnExit(GameState::GameOver), (teardown, reset_score).chain());
 
     // Misc systems
-    app.add_system(bevy::window::close_on_esc);
+    app.add_systems(Update, bevy::window::close_on_esc);
 
     // Run app
     app.run();

@@ -6,8 +6,7 @@ use bevy::{
     },
     text::{Text, TextStyle},
     ui::{
-        AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, Size, Style,
-        UiRect, Val,
+        AlignItems, BackgroundColor, FlexDirection, Interaction, JustifyContent, Style, UiRect, Val,
     },
     utils::default,
 };
@@ -38,7 +37,6 @@ pub fn setup_game_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(20.0)),
                 flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::SpaceBetween,
                 align_items: AlignItems::FlexStart,
@@ -113,7 +111,6 @@ pub fn setup_game_over_ui(
     commands
         .spawn(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                 flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
@@ -164,7 +161,6 @@ pub fn setup_game_over_ui(
             parent
                 .spawn(ButtonBundle {
                     style: Style {
-                        size: Size::new(Val::Px(200.0), Val::Px(50.0)),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         margin: UiRect::all(Val::Px(20.0)),
@@ -212,7 +208,7 @@ pub fn restart_button_system(
             Interaction::Hovered => {
                 *color = HOVERED_BUTTON.into();
             }
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
                 next_state.set(GameState::Playing);
             }

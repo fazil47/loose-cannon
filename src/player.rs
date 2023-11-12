@@ -129,7 +129,7 @@ pub fn apply_player_collider_impulse(
     let (player_collider_velocity, mut player_collider_impulse) =
         player_collider_query.single_mut();
 
-    for ev in ev_shoot.iter() {
+    for ev in ev_shoot.read() {
         // Apply impulse in the opposite direction of the shoot event
         // the impulse in the direction of the collider's velocity is ignored
         let impulse = -ev.direction * PLAYER_IMPULSE_MAGNITUDE;

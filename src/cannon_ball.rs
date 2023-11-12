@@ -27,7 +27,7 @@ pub fn shoot_cannon_ball(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut ev_shoot: EventReader<ShootEvent>,
 ) {
-    for ev in ev_shoot.iter() {
+    for ev in ev_shoot.read() {
         commands
             .spawn(PbrBundle {
                 mesh: meshes.add(
