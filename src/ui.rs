@@ -114,6 +114,8 @@ pub fn setup_game_over_ui(
                 flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
                 ..default()
             },
             background_color: Color::rgb(0.25, 0.25, 0.25).into(),
@@ -163,6 +165,7 @@ pub fn setup_game_over_ui(
                     style: Style {
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
+                        padding: UiRect::all(Val::Px(10.0)),
                         margin: UiRect::all(Val::Px(20.0)),
                         ..default()
                     },
